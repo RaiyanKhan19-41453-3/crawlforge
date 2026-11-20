@@ -40,4 +40,13 @@ class PaymentwallPayloadParserTest {
         assertThrows(ScraperException.class,
                 () -> new PaymentwallPayloadParser().parse(PAYLOAD, "deadbeef", SECRET));
     }
+
+    @Test
+    void rejectsInvalidCardNumber() throws Exception {
+        String payload = "{\"transactions\":[{\"id\":\"tx-2\","
+                + "\"card_number\":\"4111111111111112\",\"amount\":1}]}";
+        ScraperException error = assertThrows(ScraperException.class,
+                () -> new PaymentwallPayloadParser().parse(payload, sign(payload), SECRET));
+        assertEquals("PAYLOAD_ERROR", error.errorCode());
+    }
 }

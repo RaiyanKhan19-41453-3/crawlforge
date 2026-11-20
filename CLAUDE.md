@@ -14,7 +14,7 @@ or parsing logic in crawlers.
 ## Ground rules
 
 - All builds/tests run inside Docker. Never assume Maven is installed on the host.
-  Use: `docker run --rm -v "$PWD":/workspace -w /workspace maven:3.9.9-eclipse-temurin-21 mvn -B clean verify`
+  Use `./scripts/build.sh` (runs as the host user and keeps the Maven cache in `.mvn-cache/`).
 - Java 21, Maven, package root `com.crawlforge.scraper`.
 - Every new class needs unit tests in `src/test/java` mirroring its package.
 - Prefer composition + interfaces over inheritance. Use abstract classes only for
@@ -30,13 +30,10 @@ or parsing logic in crawlers.
 
 ```bash
 # Build + all tests (Docker only)
-docker run --rm -v "$PWD":/workspace -w /workspace maven:3.9.9-eclipse-temurin-21 mvn -B clean verify
+./scripts/build.sh
 
 # Run the demo crawler against the built-in local fixture server
-docker run --rm -v "$PWD":/workspace -w /workspace maven:3.9.9-eclipse-temurin-21 \
-  mvn -q -DskipTests package && \
-docker run --rm -v "$PWD":/workspace -w /workspace eclipse-temurin:21-jre \
-  java -jar target/crawlforge.jar crawl --site demo-shop
+./scripts/run-docker.sh --demo --output /app/output/demo-records.csv
 ```
 
 ## Reviewing AI-generated code (mandatory checklist)

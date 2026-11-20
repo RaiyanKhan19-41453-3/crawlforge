@@ -40,6 +40,7 @@ class HtmlParserTest {
         assertEquals(2, records.size());
         assertEquals("Widget A", records.get(0).attributes().get("title"));
         assertEquals("SKU-1001", records.get(0).attributes().get("sku"));
+        assertTrue(records.get(0).content().contains("BDT 1,250.00 SKU-1001"));
         assertTrue(records.get(0).isValid());
     }
 

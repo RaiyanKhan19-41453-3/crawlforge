@@ -77,4 +77,4 @@ AI output is never accepted unchecked:
 
 - No scraping of sites without authorisation.
 - No CAPTCHA-solving service credentials or real proxies committed.
-- Rate limiting and robots-respecting behaviour enabled by default.
+- Rate limiting is enabled by default; robots.txt rules should be reviewed per client engagement.

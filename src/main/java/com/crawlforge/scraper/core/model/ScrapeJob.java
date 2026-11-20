@@ -58,6 +58,13 @@ public final class ScrapeJob {
         if (!ok) failures++;
     }
     public synchronized void recordRecords(int count) { recordsExtracted += count; }
+
+    /** Aggregates a worker's counters into the parent job so its status is truthful. */
+    public synchronized void aggregate(int pages, int records, int failures) {
+        this.pagesCrawled += pages;
+        this.recordsExtracted += records;
+        this.failures += failures;
+    }
     public synchronized void finish() {
         status = failures == 0 ? JobStatus.SUCCEEDED
                 : (recordsExtracted > 0 ? JobStatus.PARTIAL : JobStatus.FAILED);
@@ -73,8 +80,9 @@ public final class ScrapeJob {
         private String name;
         private SiteConfig site;
         private final List<String> seedUrls = new ArrayList<>();
-        private int maxPages = 50;
-        private int maxDepth = 3;
+        // -1 means "not explicitly set" - fall back to the site recipe's limits.
+        private int maxPages = -1;
+        private int maxDepth = -1;
 
         public Builder id(String id) { this.id = id; return this; }
         public Builder name(String name) { this.name = name; return this; }
@@ -93,6 +101,8 @@ public final class ScrapeJob {
             if (site == null) throw new IllegalArgumentException("site config is required");
             if (seedUrls.isEmpty()) seedUrls.addAll(site.seedUrls());
             if (seedUrls.isEmpty()) throw new IllegalArgumentException("at least one seed URL is required");
+            if (maxPages <= 0) maxPages = site.maxPages();
+            if (maxDepth <= 0) maxDepth = site.maxDepth();
             return new ScrapeJob(this);
         }
     }

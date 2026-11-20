@@ -10,9 +10,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # Same command used locally - no Maven installed on the host.
+      # Same wrapper used locally - no Maven installed on the host.
       - name: Build and run all tests in Docker
-        run: docker run --rm -v "$PWD":/workspace -w /workspace maven:3.9.9-eclipse-temurin-21 mvn -B clean verify
+        run: |
+          chmod +x scripts/*.sh
+          ./scripts/build.sh
 
       - name: Build runtime image
         run: docker build -t crawlforge:ci .

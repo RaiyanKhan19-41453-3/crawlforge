@@ -6,6 +6,5 @@
   "files.exclude": {
     "**/target": true,
     "**/output": true
-  },
-  "java.format.settings.url": ".editorconfig"
+  }
 }

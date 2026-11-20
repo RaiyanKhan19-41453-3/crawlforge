@@ -77,13 +77,27 @@ public final class ScraperConfig {
     }
 
     private static int integer(Properties p, String key, int def) {
-        return Integer.parseInt(p.getProperty(key, String.valueOf(def)));
+        try {
+            return Integer.parseInt(p.getProperty(key, String.valueOf(def)));
+        } catch (NumberFormatException e) {
+            throw new ConfigurationException("Invalid integer for " + key + ": " + p.getProperty(key), e);
+        }
     }
     private static long longValue(Properties p, String key, long def) {
-        return Long.parseLong(p.getProperty(key, String.valueOf(def)));
+        try {
+            return Long.parseLong(p.getProperty(key, String.valueOf(def)));
+        } catch (NumberFormatException e) {
+            throw new ConfigurationException("Invalid long for " + key + ": " + p.getProperty(key), e);
+        }
     }
     private static double doubleValue(Properties p, String key, double def) {
-        return Double.parseDouble(p.getProperty(key, String.valueOf(def)));
+        try {
+            double value = Double.parseDouble(p.getProperty(key, String.valueOf(def)));
+            if (!Double.isFinite(value)) throw new NumberFormatException("not finite");
+            return value;
+        } catch (NumberFormatException e) {
+            throw new ConfigurationException("Invalid number for " + key + ": " + p.getProperty(key), e);
+        }
     }
     private static boolean bool(Properties p, String key, boolean def) {
         return Boolean.parseBoolean(p.getProperty(key, String.valueOf(def)));

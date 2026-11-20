@@ -4,9 +4,9 @@ CREATE TABLE IF NOT EXISTS scraped_records (
     source VARCHAR(255) NOT NULL,
     url VARCHAR(2048) NOT NULL,
     title VARCHAR(1000),
-    content CLOB,
+    content TEXT,
     quality_score DOUBLE PRECISION,
-    attributes CLOB,
+    attributes TEXT,
     scraped_at TIMESTAMP
 );
 

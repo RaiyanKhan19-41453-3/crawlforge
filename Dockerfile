@@ -12,8 +12,8 @@ FROM eclipse-temurin:21-jre
 # output folders stay writable. Override with `docker run --user $(id -u):$(id -g)` if needed.
 RUN mkdir -p /app/output && chown -R 1000:1000 /app
 WORKDIR /app
-COPY --from=build --chown=scraper:scraper /workspace/target/crawlforge.jar /app/crawlforge.jar
-COPY --chown=scraper:scraper config /app/config
+COPY --from=build --chown=1000:1000 /workspace/target/crawlforge.jar /app/crawlforge.jar
+COPY --chown=1000:1000 config /app/config
 USER 1000:1000
 EXPOSE 8080
 ENTRYPOINT ["java", "-jar", "/app/crawlforge.jar"]

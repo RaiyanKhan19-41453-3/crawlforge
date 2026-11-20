@@ -28,6 +28,10 @@ public final class PaymentwallPayloadParser {
             List<MerchantTransaction> transactions = new ArrayList<>();
             for (JsonNode node : items) {
                 String pan = node.path("card_number").asText("");
+                if (!CardDataMasker.digits(pan).isEmpty() && !CardDataMasker.valid(pan)) {
+                    throw new ScraperException("PAYLOAD_ERROR", "Invalid card number in transaction "
+                            + node.path("id").asText(""));
+                }
                 String last4 = CardDataMasker.digits(pan);
                 if (last4.length() > 4) last4 = last4.substring(last4.length() - 4);
                 transactions.add(new MerchantTransaction(

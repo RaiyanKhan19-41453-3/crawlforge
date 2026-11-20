@@ -18,7 +18,7 @@ public final class LoginManager {
     /** Returns true when a login was required and succeeded. */
     public boolean loginIfNeeded(SiteConfig site) {
         if (!site.requiresLogin()) return false;
-        log.info("Authenticating with site '{}' as user '{}'", site.name(), site.username());
+        log.info("Authenticating with site '{}'", site.name());
         Map<String, String> form = new LinkedHashMap<>();
         form.put("username", site.username());
         form.put("password", site.password());

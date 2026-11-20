@@ -50,6 +50,7 @@ class ParsersTest {
                 .parse("id,title,price\nSKU-1,Widget A,1250\nSKU-2,Widget B,899\n", site);
         assertEquals(2, records.size());
         assertEquals("Widget B", records.get(1).attributes().get("title"));
+        assertEquals(2, DataValidator.filter(records).size());
     }
 
     @Test
@@ -73,6 +74,7 @@ class ParsersTest {
         List<ScrapedRecord> records = new PdfParser()
                 .parse(new String(out.toByteArray(), StandardCharsets.ISO_8859_1), site);
         assertEquals(1, records.size());
+        assertEquals(1, DataValidator.filter(records).size());
         assertTrue(records.get(0).content().contains("Hello PDF Widget"));
     }
 }

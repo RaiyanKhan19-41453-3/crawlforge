@@ -44,6 +44,7 @@ public abstract class AbstractCrawler implements Crawler {
                 String raw = fetchPage(url, job);
                 if (raw == null || raw.isBlank()) {
                     context.recordFailure();
+                    context.recordPage(0);
                     job.recordPage(false);
                     continue;
                 }
@@ -66,11 +67,13 @@ public abstract class AbstractCrawler implements Crawler {
             } catch (ScraperException e) {
                 log.error("[{}] {} at {}: {}", e.errorCode(), e.getMessage(), url, e.toString());
                 context.recordFailure();
+                context.recordPage(0);
                 job.recordPage(false);
                 onPageFailure(url, e);
             } catch (RuntimeException e) {
                 log.error("Unexpected crawler error at {}: {}", url, e.toString());
                 context.recordFailure();
+                context.recordPage(0);
                 job.recordPage(false);
                 onPageFailure(url, e);
             }

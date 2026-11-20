@@ -11,6 +11,8 @@ import java.util.Map;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+import org.jsoup.nodes.Node;
+import org.jsoup.nodes.TextNode;
 import org.jsoup.select.Elements;
 
 /** Static HTML extraction with CSS selectors, XPath support and link discovery. */
@@ -39,7 +41,7 @@ public final class HtmlParser implements Parser {
                 String url = item.attr("abs:href");
                 if (url.isBlank() && site.baseUrl() != null) url = site.baseUrl();
                 String title = attributes.getOrDefault("title", firstText(item, "h1,h2,h3,.title"));
-                String content = attributes.getOrDefault("content", item.text());
+                String content = attributes.getOrDefault("content", readableText(item));
                 results.add(ScrapedRecord.builder()
                         .source(site.name())
                         .url(url)
@@ -83,6 +85,21 @@ public final class HtmlParser implements Parser {
         if (selector.startsWith("attr:")) return item.attr(selector.substring(5));
         Element found = item.selectFirst(selector);
         return found == null ? "" : found.text();
+    }
+
+    /** Jsoup's Element.text() concatenates inline siblings without separators; keep them readable. */
+    private static String readableText(Element item) {
+        StringBuilder text = new StringBuilder();
+        for (Node child : item.childNodes()) {
+            String value = child instanceof Element element ? element.text()
+                    : child instanceof TextNode node ? node.getWholeText() : "";
+            value = DataNormalizer.normalize(value);
+            if (!value.isEmpty()) {
+                if (text.length() > 0) text.append(' ');
+                text.append(value);
+            }
+        }
+        return text.toString();
     }
 
     private static String firstText(Element item, String selector) {

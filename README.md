@@ -7,7 +7,6 @@
 > Docker deployment and AI-assisted development.
 > See [`REQUIREMENTS_MATRIX.md`](REQUIREMENTS_MATRIX.md) for a capability-to-code mapping.
 
-[![CI](https://github.com/example/crawlforge/actions/workflows/ci.yml/badge.svg)](.github/workflows/ci.yml)
 Java 21 · Groovy 4 · Maven · Docker · Selenium · HtmlUnit · Playwright · Jsoup · Apache HttpClient 5 · PDFBox · Apache POI · PostgreSQL / MySQL / H2
 
 ---
@@ -26,20 +25,25 @@ docker compose up --build
 # results land in ./output/demo-records.csv
 ```
 
-Or run the reusable commands directly:
+Or use the wrappers directly:
 
 ```bash
-# Build & test
-docker run --rm -v "$PWD":/workspace -w /workspace \
-  maven:3.9.9-eclipse-temurin-21 mvn -B clean verify
-
-# Run the demo against the fat jar
-docker run --rm -v "$PWD/output":/app/output -w /app \
-  eclipse-temurin:21-jre java -jar target/crawlforge.jar \
-  --demo --output /app/output/demo-records.csv
+./scripts/build.sh                                   # build + all tests
+./scripts/run-docker.sh --demo --output /app/output/demo-records.csv
 ```
 
-Windows users: `scripts\build.bat` and `scripts\run-docker.bat` do the same thing.
+Windows equivalents: `scripts\build.bat` and `scripts\run-docker.bat`.
+
+If you prefer plain `docker run`, make sure the jar is mounted into the container:
+
+```bash
+docker run --rm --user "$(id -u):$(id -g)" \
+  -v "$PWD/output":/app/output \
+  -v "$PWD/config":/app/config:ro \
+  -v "$PWD/target/crawlforge.jar":/app/crawlforge.jar:ro \
+  -w /app eclipse-temurin:21-jre java -jar /app/crawlforge.jar \
+  --demo --output /app/output/demo-records.csv
+```
 
 ---
 
@@ -57,7 +61,7 @@ Windows users: `scripts\build.bat` and `scripts\run-docker.bat` do the same thin
 | **AI-driven development** | `CLAUDE.md`, `AGENTS.md`, real prompt library in `docs/AI_ASSISTED_WORKFLOW.md` |
 | **DevOps** | Dockerfile, docker-compose, GitHub Actions CI, JIRA/PR/issue templates |
 | **Cross-platform / IDEs** | `.vscode/`, `.idea/`, `scripts/*.sh` and `scripts/*.bat` |
-| **Data quality** | Per-record quality score, validator gate, 20+ automated tests |
+| **Data quality** | Per-record quality score, validator gate, 44 automated tests |
 
 ---
 
@@ -130,6 +134,3 @@ scripts/           Docker-only build/run wrappers for Linux and Windows
   rate limits and never bypasses access controls or CAPTCHAs fraudulently.
 - The built-in demo server exists so the full pipeline can be verified without a live site.
 - Every claim in this README is backed by code and an automated test.
-
-**Your name / degree details:** update `README.md` and `docs/` with your own education and
-contact information before submitting.

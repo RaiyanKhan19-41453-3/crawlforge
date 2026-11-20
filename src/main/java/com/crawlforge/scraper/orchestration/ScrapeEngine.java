@@ -51,6 +51,7 @@ public final class ScrapeEngine {
                 Crawler crawler = crawlerFactory.create(job.site().sourceType());
                 CrawlContext context = new CrawlContext();
                 List<ScrapedRecord> records = crawler.crawl(subJob, context);
+                job.aggregate(context.pages(), records.size(), context.failures());
                 metrics.addPages(context.pages());
                 metrics.addFailures(context.failures());
                 return records;

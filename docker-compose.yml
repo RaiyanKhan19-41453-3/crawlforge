@@ -5,9 +5,9 @@ services:
     user: "${UID:-1000}:${GID:-1000}"
     environment:
       SCRAPER_MAX_THREADS: "4"
-      SCRAPER_DB_URL: jdbc:postgresql://postgres:5432/crawlforge
-      SCRAPER_DB_USER: crawlforge
-      SCRAPER_DB_PASSWORD: crawlforge
+      SCRAPER_DB_URL: ${SCRAPER_DB_URL:-jdbc:postgresql://postgres:5432/crawlforge}
+      SCRAPER_DB_USER: ${SCRAPER_DB_USER:-crawlforge}
+      SCRAPER_DB_PASSWORD: ${SCRAPER_DB_PASSWORD:-crawlforge}
     volumes:
       - ./output:/app/output
     depends_on:
@@ -19,14 +19,14 @@ services:
     image: postgres:16-alpine
     container_name: crawlforge-db
     environment:
-      POSTGRES_DB: crawlforge
-      POSTGRES_USER: crawlforge
-      POSTGRES_PASSWORD: crawlforge
+      POSTGRES_DB: ${POSTGRES_DB:-crawlforge}
+      POSTGRES_USER: ${POSTGRES_USER:-crawlforge}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-crawlforge}
     volumes:
       - crawlforge-db:/var/lib/postgresql/data
       - ./sql/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U crawlforge"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-crawlforge}"]
       interval: 5s
       timeout: 3s
       retries: 10

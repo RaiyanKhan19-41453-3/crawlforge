@@ -3,7 +3,7 @@
 Agent-neutral instructions (works with Claude Code, Codex, Cursor and other coding agents).
 
 - Project: CrawlForge, Java 21 + Groovy 4 + Maven, Docker-only toolchain.
-- Build/test: `docker run --rm -v "$PWD":/workspace -w /workspace maven:3.9.9-eclipse-temurin-21 mvn -B clean verify`
+- Build/test: `./scripts/build.sh` (Docker only; Windows: `scripts\build.bat`).
 - Source layout: `core` (models/config/errors), `http` (transport), `stealth` (anti-bot),
   `parsers` (data extraction), `crawler` (traversal), `export` (output),
   `persistence` (SQL), `orchestration` (concurrency), `payment` (client domain),

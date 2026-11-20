@@ -2,7 +2,6 @@ package com.crawlforge.scraper.core.model;
 
 import java.time.Instant;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -46,12 +45,14 @@ public final class ScrapedRecord {
     /** Cheap structural validation used before a record is persisted or exported. */
     public boolean isValid() {
         boolean hasPayload = (content != null && !content.isBlank()) || !attributes.isEmpty();
-        return url != null && url.startsWith("http") && hasPayload && qualityScore >= 0.0;
+        boolean hasUrl = url != null && (url.startsWith("http")
+                || url.startsWith("csv://") || url.startsWith("pdf://"));
+        return hasUrl && hasPayload && qualityScore >= 0.0;
     }
 
     /** Flat representation used by CSV/Excel/JSON writers and the SQL repository. */
     public Map<String, String> toMap() {
-        Map<String, String> flat = new HashMap<>(attributes);
+        Map<String, String> flat = new LinkedHashMap<>(attributes);
         flat.put("source", Objects.toString(source, ""));
         flat.put("url", Objects.toString(url, ""));
         flat.put("title", Objects.toString(title, ""));
