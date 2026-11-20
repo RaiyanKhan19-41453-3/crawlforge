@@ -6,6 +6,7 @@ import com.crawlforge.scraper.core.exception.AntiBotException;
 import com.crawlforge.scraper.core.exception.CaptchaDetectedException;
 import com.crawlforge.scraper.core.exception.FetchException;
 import com.crawlforge.scraper.core.exception.RateLimitException;
+import com.crawlforge.scraper.core.exception.NonRetryableFetchException;
 import com.crawlforge.scraper.core.exception.RetryExhaustedException;
 import com.crawlforge.scraper.orchestration.MetricsCollector;
 import com.crawlforge.scraper.stealth.AntiBotDetector;
@@ -117,8 +118,8 @@ public final class ResilientHttpClient implements AutoCloseable {
                 get.setConfig(requestConfig());
                 applyStealthHeaders(get, url);
                 return action.run(get);
-            } catch (CaptchaDetectedException e) {
-                // A solver returning false means "unrecoverable": fail fast, do not re-challenge.
+            } catch (CaptchaDetectedException | NonRetryableFetchException e) {
+                // Permanent failures must not burn retries or inflate transport counters.
                 throw e;
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
@@ -217,7 +218,7 @@ public final class ResilientHttpClient implements AutoCloseable {
             throw new FetchException("HTTP " + response.status() + " from " + response.url());
         }
         if (response.status() >= 400) {
-            throw new FetchException("HTTP " + response.status() + " from " + response.url());
+            throw new NonRetryableFetchException("HTTP " + response.status() + " from " + response.url());
         }
         AntiBotDetector.ThreatLevel threat = antiBotDetector.detect(response.body(), response.status());
         if (threat == AntiBotDetector.ThreatLevel.CAPTCHA) {
@@ -243,8 +244,12 @@ public final class ResilientHttpClient implements AutoCloseable {
             if (matcher.find()) return decodeWith(body, matcher.group(1));
         }
         int headLength = Math.min(body.length, 2048);
-        Matcher meta = META_CHARSET.matcher(new String(body, 0, headLength, StandardCharsets.ISO_8859_1));
-        if (meta.find()) return decodeWith(body, meta.group(1));
+        String head = new String(body, 0, headLength, StandardCharsets.ISO_8859_1).trim();
+        boolean looksLikeHtml = head.startsWith("<") && !head.startsWith("<?xml");
+        if (looksLikeHtml) {
+            Matcher meta = META_CHARSET.matcher(head);
+            if (meta.find()) return decodeWith(body, meta.group(1));
+        }
         return new String(body, StandardCharsets.UTF_8);
     }
 
@@ -292,11 +297,19 @@ public final class ResilientHttpClient implements AutoCloseable {
     public int captchaChallenges() { return captchaChallenges.get(); }
     public int blockedResponses() { return blockedResponses.get(); }
 
-    /** Registers credentials for an HTTP Basic-auth protected site. Values are never logged. */
-    public void withBasicAuth(String username, String password) {
-        if (username == null || password == null) return;
-        credentials.setCredentials(new AuthScope(null, -1),
-                new UsernamePasswordCredentials(username, password.toCharArray()));
+    /**
+     * Registers Basic-auth credentials scoped to the site's host and port. The scope is
+     * deliberately narrow so HttpClient never forwards them to a different host.
+     */
+    public void withBasicAuth(String siteUrl, String username, String password) {
+        if (siteUrl == null || username == null || password == null) return;
+        try {
+            URI uri = URI.create(siteUrl);
+            credentials.setCredentials(new AuthScope(uri.getHost(), uri.getPort()),
+                    new UsernamePasswordCredentials(username, password.toCharArray()));
+        } catch (IllegalArgumentException e) {
+            log.warn("Could not scope Basic-auth credentials to {}: {}", siteUrl, e.getMessage());
+        }
     }
 
     /** Connects transport counters to the run report so retries/captchas/blocks are visible. */

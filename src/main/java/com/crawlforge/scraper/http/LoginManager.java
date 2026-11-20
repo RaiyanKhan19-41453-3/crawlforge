@@ -15,12 +15,19 @@ public final class LoginManager {
 
     public LoginManager(ResilientHttpClient http) { this.http = http; }
 
-    /** Returns true when a login was required and succeeded. */
+    /**
+     * Registers Basic-auth credentials whenever a recipe supplies them, then performs a form
+     * login only when the recipe also defines a login URL.
+     *
+     * @return true when a form login was required and succeeded
+     */
     public boolean loginIfNeeded(SiteConfig site) {
+        if (site.username() != null && site.password() != null) {
+            String scope = site.loginUrl() != null ? site.loginUrl() : site.baseUrl();
+            http.withBasicAuth(scope, site.username(), site.password());
+        }
         if (!site.requiresLogin()) return false;
         log.info("Authenticating with site '{}'", site.name());
-        // Also register credentials so a Basic-auth challenge on the login URL works.
-        http.withBasicAuth(site.username(), site.password());
         Map<String, String> form = new LinkedHashMap<>();
         form.put("username", site.username());
         form.put("password", site.password());

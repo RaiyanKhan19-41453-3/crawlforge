@@ -3,6 +3,7 @@ package com.crawlforge.scraper.stealth;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
+import java.net.http.HttpClient.Redirect;
 import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.HashSet;
@@ -16,6 +17,8 @@ import java.util.concurrent.ConcurrentHashMap;
 public final class RobotsTxtChecker {
 
     public static final RobotsTxtChecker INSTANCE = new RobotsTxtChecker();
+    // RFC 9309: 401/403 on robots.txt means complete disallow. "" matches every path.
+    private static final Set<String> DISALLOW_ALL = Set.of("");
 
     private final ConcurrentHashMap<String, Set<String>> cache = new ConcurrentHashMap<>();
 
@@ -38,22 +41,34 @@ public final class RobotsTxtChecker {
         try {
             HttpRequest request = HttpRequest.newBuilder(URI.create(origin + "/robots.txt"))
                     .timeout(Duration.ofSeconds(3)).GET().build();
-            HttpResponse<String> response = HttpClient.newHttpClient()
-                    .send(request, HttpResponse.BodyHandlers.ofString());
+            HttpClient client = HttpClient.newBuilder()
+                    .followRedirects(Redirect.NORMAL)
+                    .connectTimeout(Duration.ofSeconds(3)).build();
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() == 401 || response.statusCode() == 403) return DISALLOW_ALL;
             if (response.statusCode() >= 400) return Set.of();
 
             Set<String> rules = new HashSet<>();
-            boolean wildcardGroup = false;
+            boolean inAgentBlock = false;
+            boolean groupAppliesToWildcard = false;
             for (String rawLine : response.body().split("\\R")) {
-                String line = rawLine.replace("#", "").trim();
+                int comment = rawLine.indexOf('#');
+                String line = (comment >= 0 ? rawLine.substring(0, comment) : rawLine).trim();
                 int colon = line.indexOf(':');
                 if (colon < 0) continue;
                 String key = line.substring(0, colon).trim();
                 String value = line.substring(colon + 1).trim();
                 if (key.equalsIgnoreCase("User-agent")) {
-                    wildcardGroup = "*".equals(value);
-                } else if (key.equalsIgnoreCase("Disallow") && wildcardGroup && !value.isEmpty()) {
-                    rules.add(value);
+                    if (!inAgentBlock) {
+                        inAgentBlock = true;
+                        groupAppliesToWildcard = false;
+                    }
+                    if ("*".equals(value)) groupAppliesToWildcard = true;
+                } else if (key.equalsIgnoreCase("Disallow")) {
+                    inAgentBlock = false;
+                    if (groupAppliesToWildcard && !value.isEmpty()) rules.add(value);
+                } else {
+                    inAgentBlock = false;
                 }
             }
             return Set.copyOf(rules);

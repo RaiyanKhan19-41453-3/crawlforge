@@ -97,6 +97,26 @@ class Round5FeaturesTest {
         }
     }
 
+    @Test
+    void httpBasicAuthChallengeIsAnswered() throws Exception {
+        try (LocalServer server = LocalServer.start()) {
+            server.route("/basic", exchange -> {
+                String auth = exchange.getRequestHeaders().getFirst("Authorization");
+                if (auth == null || !auth.startsWith("Basic ")) {
+                    exchange.getResponseHeaders().set("WWW-Authenticate", "Basic realm=\"test\"");
+                    exchange.sendResponseHeaders(401, -1);
+                    exchange.close();
+                } else {
+                    LocalServer.respond(exchange, 200, "authenticated");
+                }
+            });
+            try (ResilientHttpClient http = new ResilientHttpClient(fastConfig())) {
+                http.withBasicAuth(server.url("/basic"), "user", "pass");
+                assertEquals("authenticated", http.fetch(server.url("/basic")).body());
+            }
+        }
+    }
+
     private ScraperConfig fastConfig() throws Exception {
         Path file = Files.createTempFile("r5-config", ".properties");
         Files.writeString(file, "scraper.retry.attempts=3\nscraper.retry.baseDelayMs=1\n"
