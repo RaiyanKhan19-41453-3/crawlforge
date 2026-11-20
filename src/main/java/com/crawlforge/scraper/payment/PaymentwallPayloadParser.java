@@ -35,6 +35,13 @@ public final class PaymentwallPayloadParser {
             }
             List<MerchantTransaction> transactions = new ArrayList<>();
             for (JsonNode node : items) {
+                String id = node.path("id").asText("");
+                JsonNode amountNode = node.get("amount");
+                if (id.isBlank() || amountNode == null || !amountNode.isNumber()
+                        || amountNode.asDouble() <= 0 || !node.hasNonNull("created_at")) {
+                    throw new ScraperException("PAYLOAD_ERROR",
+                            "Transaction requires id, positive numeric amount and created_at");
+                }
                 String pan = node.path("card_number").asText("");
                 if (!CardDataMasker.digits(pan).isEmpty() && !CardDataMasker.valid(pan)) {
                     throw new ScraperException("PAYLOAD_ERROR", "Invalid card number in transaction "
@@ -43,10 +50,10 @@ public final class PaymentwallPayloadParser {
                 String last4 = CardDataMasker.digits(pan);
                 if (last4.length() > 4) last4 = last4.substring(last4.length() - 4);
                 transactions.add(new MerchantTransaction(
-                        node.path("id").asText(""),
+                        id,
                         last4,
                         CardDataMasker.brand(pan),
-                        node.path("amount").asDouble(),
+                        amountNode.asDouble(),
                         node.path("currency").asText("BDT"),
                         node.path("status").asText(""),
                         Instant.ofEpochSecond(node.path("created_at").asLong())));

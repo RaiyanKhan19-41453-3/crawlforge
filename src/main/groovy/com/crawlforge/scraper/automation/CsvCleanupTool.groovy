@@ -18,8 +18,9 @@ class CsvCleanupTool {
             List<String> headers = parser.headerNames
             def printer = new CSVPrinter(writer, CSVFormat.DEFAULT.builder().setHeader(headers as String[]).build())
             parser.each { row ->
-                printer.printRecord(headers.collect { h ->
-                    row.isMapped(h) ? row.get(h).trim().replaceAll(/\s+/, ' ') : ''
+                // Use positional access so duplicate header names never lose a column.
+                printer.printRecord((0..<headers.size()).collect { i ->
+                    row.size() > i ? row.get(i).trim().replaceAll(/\s+/, ' ') : ''
                 })
             }
             printer.flush()

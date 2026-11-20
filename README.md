@@ -42,6 +42,8 @@ If you prefer plain `docker run`, make sure the jar is mounted into the containe
 docker run --rm --user "$(id -u):$(id -g)" \
   -v "$PWD/output":/app/output \
   -v "$PWD/config":/app/config:ro \
+  -v "$PWD/sql":/app/sql:ro \
+  -e SCRAPER_DB_URL -e SCRAPER_DB_USER -e SCRAPER_DB_PASSWORD \
   -v "$PWD/target/crawlforge.jar":/app/crawlforge.jar:ro \
   -w /app eclipse-temurin:21-jre java -jar /app/crawlforge.jar \
   --demo --output /app/output/demo-records.csv
@@ -63,7 +65,7 @@ docker run --rm --user "$(id -u):$(id -g)" \
 | **AI-driven development** | `CLAUDE.md`, `AGENTS.md`, real prompt library in `docs/AI_ASSISTED_WORKFLOW.md` |
 | **DevOps** | Dockerfile, docker-compose, GitHub Actions CI, JIRA/PR/issue templates |
 | **Cross-platform / IDEs** | `.vscode/`, `.idea/`, `scripts/*.sh` and `scripts/*.bat` |
-| **Data quality** | Per-record quality score, validator gate, 90 automated tests |
+| **Data quality** | Per-record quality score, validator gate, 95 automated tests |
 
 ---
 
@@ -138,4 +140,4 @@ scripts/           Docker-only build/run wrappers for Linux and Windows
   without them. Use `HtmlUnitCrawler` (no browser needed), or enable `-Pplaywright-runtime`
   and install Chromium when building a browser-enabled image.
 - The built-in demo server exists so the full pipeline can be verified without a live site.
-- Core behaviour is covered by 90 automated tests; run `./scripts/build.sh` to verify.
+- Core behaviour is covered by 95 automated tests; run `./scripts/build.sh` to verify.

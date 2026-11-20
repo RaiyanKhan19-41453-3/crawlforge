@@ -11,6 +11,8 @@ docker run --rm \
   --user "$(id -u):$(id -g)" \
   -v "$PWD/output":/app/output \
   -v "$PWD/config":/app/config:ro \
+  -v "$PWD/sql":/app/sql:ro \
+  -e SCRAPER_DB_URL -e SCRAPER_DB_USER -e SCRAPER_DB_PASSWORD \
   -v "$PWD/target/crawlforge.jar":/app/crawlforge.jar:ro \
   -w /app \
   eclipse-temurin:21-jre java -jar /app/crawlforge.jar "$@"

@@ -59,7 +59,9 @@ public final class SiteConfigLoader {
             List<Path> files = stream.filter(p -> p.toString().endsWith(".json")).sorted().toList();
             for (Path file : files) {
                 SiteConfig config = load(file);
-                configs.put(config.name(), config);
+                if (configs.putIfAbsent(config.name(), config) != null) {
+                    throw new ConfigurationException("Duplicate site recipe name: " + config.name());
+                }
             }
         } catch (IOException e) {
             throw new ConfigurationException("Could not read site configs in " + directory, e);

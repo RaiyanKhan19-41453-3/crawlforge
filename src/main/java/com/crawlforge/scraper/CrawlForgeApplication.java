@@ -97,7 +97,8 @@ public final class CrawlForgeApplication implements Runnable {
             return;
         }
         DatabaseManager database = new DatabaseManager(config);
-        database.initializeSchema(Path.of("sql", "schema.sql"));
+        String schema = config.dbUrl().contains(":mysql:") ? "schema-mysql.sql" : "schema.sql";
+        database.initializeSchema(Path.of("sql", schema));
         RecordRepository repository = new RecordRepository(database);
         int saved = repository.saveAll(result.records());
         System.out.println("Persisted: " + saved + " rows (" + repository.qualitySummary() + ")");
@@ -105,10 +106,14 @@ public final class CrawlForgeApplication implements Runnable {
 
     private void runConfiguredSite(ScrapeEngine engine, ScraperConfig config) {
         Map<String, SiteConfig> sites = new SiteConfigLoader().loadAll(sitesDir);
-        if (siteName == null || !sites.containsKey(siteName)) {
+        if (siteName == null) {
             System.out.println("Available site recipes: " + sites.keySet());
             System.out.println("Use --site <name> to run one, or --demo for the offline example.");
             return;
+        }
+        if (!sites.containsKey(siteName)) {
+            throw new CommandLine.ParameterException(new CommandLine(this),
+                    "Unknown site '" + siteName + "'. Available: " + sites.keySet());
         }
         SiteConfig site = sites.get(siteName);
         ScrapeJob job = ScrapeJob.builder().name(site.name()).site(site).build();

@@ -20,7 +20,7 @@ public final class CardDataMasker {
     public static String brand(String pan) {
         String digits = digits(pan);
         if (digits.startsWith("4")) return "VISA";
-        if (digits.matches("5[1-5][0-9]{14}")) return "MASTERCARD";
+        if (digits.matches("(?:5[1-5]|2[2-7])[0-9]{14,17}")) return "MASTERCARD";
         if (digits.matches("3[47][0-9]{13}")) return "AMEX";
         return "UNKNOWN";
     }

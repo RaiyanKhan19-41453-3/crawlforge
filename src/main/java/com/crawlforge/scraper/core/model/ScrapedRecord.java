@@ -52,7 +52,10 @@ public final class ScrapedRecord {
 
     /** Flat representation used by CSV/Excel/JSON writers and the SQL repository. */
     public Map<String, String> toMap() {
-        Map<String, String> flat = new LinkedHashMap<>(attributes);
+        Map<String, String> flat = new LinkedHashMap<>();
+        java.util.Set<String> reserved = java.util.Set.of("source", "url", "title", "content",
+                "quality_score", "scraped_at");
+        attributes.forEach((key, value) -> flat.put(reserved.contains(key) ? "attr_" + key : key, value));
         flat.put("source", Objects.toString(source, ""));
         flat.put("url", Objects.toString(url, ""));
         flat.put("title", Objects.toString(title, ""));
