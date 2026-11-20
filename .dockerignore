@@ -1,0 +1,11 @@
+target/
+output/
+.git/
+.idea/
+.vscode/
+*.log
+.env
+README.md
+REQUIREMENTS_MATRIX.md
+docs/
+.github/

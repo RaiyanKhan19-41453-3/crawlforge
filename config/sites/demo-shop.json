@@ -1,0 +1,19 @@
+{
+  "name": "demo-shop",
+  "sourceType": "HTML",
+  "baseUrl": "http://127.0.0.1:8080",
+  "seedUrls": ["http://127.0.0.1:8080/page/1"],
+  "itemSelector": ".product",
+  "nextPageSelector": "a.next",
+  "fields": {
+    "title": "h2.title",
+    "price": ".price"
+  },
+  "xpathFields": {
+    "sku": "//span[@id='sku']"
+  },
+  "maxPages": 10,
+  "maxDepth": 2,
+  "followLinks": true,
+  "javascriptRequired": false
+}

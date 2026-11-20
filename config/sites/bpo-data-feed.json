@@ -1,0 +1,17 @@
+{
+  "name": "bpo-data-feed",
+  "sourceType": "JSON",
+  "baseUrl": "http://client.example.com/api",
+  "seedUrls": ["http://client.example.com/api/products"],
+  "jsonResultPath": "$.products",
+  "jsonIdField": "id",
+  "fields": {
+    "sku": "id",
+    "title": "title",
+    "price": "price"
+  },
+  "maxPages": 1,
+  "maxDepth": 1,
+  "followLinks": false,
+  "javascriptRequired": false
+}

@@ -1,0 +1,13 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "java",
+      "name": "CrawlForge (offline demo)",
+      "request": "launch",
+      "mainClass": "com.crawlforge.scraper.CrawlForgeApplication",
+      "projectName": "crawlforge",
+      "args": "--demo --output output/demo-debug.csv"
+    }
+  ]
+}

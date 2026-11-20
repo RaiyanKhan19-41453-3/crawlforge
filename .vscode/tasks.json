@@ -1,0 +1,18 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Docker: build + test",
+      "type": "shell",
+      "command": "./scripts/build.sh",
+      "group": { "kind": "build", "isDefault": true },
+      "problemMatcher": []
+    },
+    {
+      "label": "Docker: run demo",
+      "type": "shell",
+      "command": "./scripts/run-docker.sh --demo --output /app/output/demo-records.csv",
+      "problemMatcher": []
+    }
+  ]
+}

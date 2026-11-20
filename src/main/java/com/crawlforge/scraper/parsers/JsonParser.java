@@ -1,0 +1,79 @@
+package com.crawlforge.scraper.parsers;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.crawlforge.scraper.core.config.SiteConfig;
+import com.crawlforge.scraper.core.exception.ParseException;
+import com.crawlforge.scraper.core.model.ScrapedRecord;
+import com.crawlforge.scraper.core.model.SourceType;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
+/** Parses JSON APIs and embedded JSON payloads using Jackson JsonPointer paths. */
+public final class JsonParser implements Parser {
+
+    private final ObjectMapper mapper = new ObjectMapper();
+
+    @Override
+    public boolean supports(SourceType type) { return type == SourceType.JSON; }
+
+    @Override
+    public List<ScrapedRecord> parse(String raw, SiteConfig site) {
+        try {
+            JsonNode root = mapper.readTree(raw);
+            JsonNode collection = resolvePath(root, site.jsonResultPath());
+            List<JsonNode> nodes = new ArrayList<>();
+            if (collection != null && collection.isArray()) {
+                collection.forEach(nodes::add);
+            } else if (collection != null && !collection.isMissingNode()) {
+                nodes.add(collection);
+            }
+            List<ScrapedRecord> results = new ArrayList<>();
+            for (JsonNode node : nodes) {
+                Map<String, String> attributes = new LinkedHashMap<>();
+                if (site.fields().isEmpty()) {
+                    Iterator<Map.Entry<String, JsonNode>> it = node.fields();
+                    while (it.hasNext()) {
+                        Map.Entry<String, JsonNode> field = it.next();
+                        attributes.put(field.getKey(), text(field.getValue()));
+                    }
+                } else {
+                    site.fields().forEach((name, pointer) ->
+                            attributes.put(name, text(node.at(pointer.startsWith("/") ? pointer : "/" + pointer))));
+                }
+                attributes.replaceAll((key, value) -> DataNormalizer.normalize(value));
+
+                String url = text(node.at("/url"));
+                if (url.isBlank()) url = site.baseUrl();
+                String title = attributes.getOrDefault("title", text(node.at("/title")));
+                String content = attributes.getOrDefault("content", node.toString());
+                results.add(ScrapedRecord.builder()
+                        .source(site.name())
+                        .url(url)
+                        .title(title)
+                        .content(DataNormalizer.truncate(content, 10_000))
+                        .attributes(attributes)
+                        .qualityScore(DataValidator.score(url, content, attributes))
+                        .build());
+            }
+            return List.copyOf(results);
+        } catch (IOException e) {
+            throw new ParseException("Could not parse JSON for site " + site.name(), e);
+        }
+    }
+
+    private static JsonNode resolvePath(JsonNode root, String path) {
+        if (path == null || path.isBlank() || "$".equals(path)) return root;
+        String clean = path.replaceFirst("^\\$", "").replaceFirst("^\\.", "");
+        return root.at("/" + clean.replace('.', '/'));
+    }
+
+    private static String text(JsonNode node) {
+        if (node == null || node.isMissingNode() || node.isNull()) return "";
+        return node.isValueNode() ? node.asText() : node.toString();
+    }
+}

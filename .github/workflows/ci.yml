@@ -1,0 +1,18 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Same command used locally - no Maven installed on the host.
+      - name: Build and run all tests in Docker
+        run: docker run --rm -v "$PWD":/workspace -w /workspace maven:3.9.9-eclipse-temurin-21 mvn -B clean verify
+
+      - name: Build runtime image
+        run: docker build -t crawlforge:ci .
