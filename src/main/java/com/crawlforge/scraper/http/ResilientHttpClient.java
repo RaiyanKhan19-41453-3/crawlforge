@@ -322,11 +322,31 @@ public final class ResilientHttpClient implements AutoCloseable {
         if (siteUrl == null || username == null || password == null) return;
         try {
             URI uri = URI.create(siteUrl);
-            if (uri.getHost() == null) {
+            if (!uri.isAbsolute()) {
                 log.warn("Refusing to register Basic-auth credentials for a relative URL: {}", siteUrl);
                 return;
             }
-            credentials.setCredentials(new AuthScope(uri.getHost(), uri.getPort()),
+            String host = uri.getHost();
+            int port = uri.getPort();
+            if (host == null) {
+                // URI.getHost() is null for underscores and some IDNs; fall back to authority.
+                host = uri.getAuthority();
+                if (host != null && host.contains("@")) host = host.substring(host.indexOf('@') + 1);
+                if (host != null && port < 0 && host.contains(":")) {
+                    int colon = host.lastIndexOf(':');
+                    try {
+                        port = Integer.parseInt(host.substring(colon + 1));
+                        host = host.substring(0, colon);
+                    } catch (NumberFormatException ignored) {
+                        // Keep the original authority as host.
+                    }
+                }
+            }
+            if (host == null || host.isBlank()) {
+                log.warn("Could not determine host for Basic-auth credentials: {}", siteUrl);
+                return;
+            }
+            credentials.setCredentials(new AuthScope(host, port),
                     new UsernamePasswordCredentials(username, password.toCharArray()));
         } catch (IllegalArgumentException e) {
             log.warn("Could not scope Basic-auth credentials to {}: {}", siteUrl, e.getMessage());
@@ -336,6 +356,12 @@ public final class ResilientHttpClient implements AutoCloseable {
     /** Shared flag so parallel workers log in only once per run. */
     public boolean isAuthenticated() { return authenticated.get(); }
     public void markAuthenticated() { authenticated.set(true); }
+
+    /** Clears session state before a new job reuses this client. */
+    public void resetAuthentication() {
+        authenticated.set(false);
+        cookies.clear();
+    }
 
     /** Connects transport counters to the run report so retries/captchas/blocks are visible. */
     public void attachMetrics(MetricsCollector metrics) { this.metrics = metrics; }

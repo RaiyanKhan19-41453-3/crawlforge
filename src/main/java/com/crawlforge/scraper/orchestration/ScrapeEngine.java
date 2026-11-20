@@ -34,6 +34,7 @@ public final class ScrapeEngine {
     public EngineResult execute(ScrapeJob job, String outputTarget) {
         long started = System.currentTimeMillis();
         job.markRunning();
+        crawlerFactory.http().resetAuthentication();
         // Duplicate seeds would otherwise create duplicate rows and corrupt a client feed.
         List<String> seeds = job.seedUrls().stream().distinct().toList();
         int seedCount = Math.max(1, seeds.size());

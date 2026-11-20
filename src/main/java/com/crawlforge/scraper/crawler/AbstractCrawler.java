@@ -57,11 +57,13 @@ public abstract class AbstractCrawler implements Crawler {
                     }
                     // Parsers work from a page body and may not know the exact URL. Restore it
                     // here so every exported row has auditable provenance.
-                    List<ScrapedRecord> records = DataValidator.filter(parserRegistry.parse(raw, site))
-                            .stream()
+                    // Restore provenance first: a record with a blank URL is invalid, so
+                    // filtering before this step would silently discard perfectly good rows.
+                    List<ScrapedRecord> records = parserRegistry.parse(raw, site).stream()
                             .map(record -> record.url() == null || record.url().isBlank()
                                     || record.url().equals(site.baseUrl()) ? record.withUrl(pageUrl) : record)
                             .toList();
+                    records = DataValidator.filter(records);
                     results.addAll(records);
                     context.recordPage(records.size());
                     job.recordPage(true);
