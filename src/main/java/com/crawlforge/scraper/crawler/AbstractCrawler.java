@@ -60,8 +60,14 @@ public abstract class AbstractCrawler implements Crawler {
                     // Restore provenance first: a record with a blank URL is invalid, so
                     // filtering before this step would silently discard perfectly good rows.
                     List<ScrapedRecord> records = parserRegistry.parse(raw, site).stream()
-                            .map(record -> record.url() == null || record.url().isBlank()
-                                    || record.url().equals(site.baseUrl()) ? record.withUrl(pageUrl) : record)
+                            .map(record -> {
+                                ScrapedRecord fixed = record.url() == null || record.url().isBlank()
+                                        || record.url().equals(site.baseUrl()) ? record.withUrl(pageUrl) : record;
+                                // The parser scored against a possibly blank URL; rescore with
+                                // the corrected provenance before the quality gate.
+                                return fixed.withQualityScore(DataValidator.score(
+                                        fixed.url(), fixed.content(), fixed.attributes()));
+                            })
                             .toList();
                     records = DataValidator.filter(records);
                     results.addAll(records);

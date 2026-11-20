@@ -65,6 +65,14 @@ public final class ScrapedRecord {
         return flat;
     }
 
+    /** Copy with a recomputed quality score. */
+    public ScrapedRecord withQualityScore(double score) {
+        return builder()
+                .source(source).url(url).title(title).content(content)
+                .attributes(attributes).qualityScore(score).scrapedAt(scrapedAt)
+                .build();
+    }
+
     /** Copy with a corrected source URL - used when the parser only knew the site root. */
     public ScrapedRecord withUrl(String newUrl) {
         return builder()

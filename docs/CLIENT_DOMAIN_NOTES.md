@@ -33,7 +33,8 @@ e-commerce data often needs:
 1. Verify the `HmacSHA256` signature before trusting the payload.
 2. Parse transaction fields (`id`, `amount`, `currency`, `status`, `created_at`).
 3. Keep only the last four digits of a card number; brand detected from the PAN prefix.
-4. Validate PANs with the Luhn checksum.
+4. Validate PANs with the Luhn checksum, require a positive finite amount (kept as
+   `BigDecimal`), a text status and a valid numeric timestamp.
 5. Raise a typed `ScraperException` with `SIGNATURE_ERROR` / `PAYLOAD_ERROR` codes.
 
 No real card data, API keys or webhook secrets are present in the repository.

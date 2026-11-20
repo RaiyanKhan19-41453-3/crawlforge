@@ -37,29 +37,45 @@ public final class PaymentwallPayloadParser {
             for (JsonNode node : items) {
                 String id = node.path("id").asText("");
                 JsonNode amountNode = node.get("amount");
+                JsonNode createdNode = node.get("created_at");
+                JsonNode currencyNode = node.get("currency");
+                JsonNode statusNode = node.get("status");
                 if (id.isBlank() || amountNode == null || !amountNode.isNumber()
-                        || amountNode.asDouble() <= 0 || !node.hasNonNull("created_at")) {
+                        || createdNode == null || !createdNode.isIntegralNumber()
+                        || statusNode == null || !statusNode.isTextual() || statusNode.asText().isBlank()) {
                     throw new ScraperException("PAYLOAD_ERROR",
-                            "Transaction requires id, positive numeric amount and created_at");
+                            "Transaction requires id, numeric amount, text status and integral created_at");
+                }
+                String currency = "BDT";
+                if (currencyNode != null && !currencyNode.isNull()) {
+                    if (!currencyNode.isTextual() || currencyNode.asText().isBlank()) {
+                        throw new ScraperException("PAYLOAD_ERROR", "Invalid currency code");
+                    }
+                    currency = currencyNode.asText();
+                }
+                java.math.BigDecimal amount = amountNode.decimalValue();
+                double approximate = amount.doubleValue();
+                if (amount.signum() <= 0 || !Double.isFinite(approximate)) {
+                    throw new ScraperException("PAYLOAD_ERROR", "Amount must be finite and positive");
+                }
+                Instant createdAt;
+                try {
+                    createdAt = Instant.ofEpochSecond(createdNode.asLong());
+                } catch (java.time.DateTimeException e) {
+                    throw new ScraperException("PAYLOAD_ERROR", "created_at is out of range", e);
                 }
                 String pan = node.path("card_number").asText("");
                 if (!CardDataMasker.digits(pan).isEmpty() && !CardDataMasker.valid(pan)) {
-                    throw new ScraperException("PAYLOAD_ERROR", "Invalid card number in transaction "
-                            + node.path("id").asText(""));
+                    throw new ScraperException("PAYLOAD_ERROR", "Invalid card number in transaction " + id);
                 }
                 String last4 = CardDataMasker.digits(pan);
                 if (last4.length() > 4) last4 = last4.substring(last4.length() - 4);
                 transactions.add(new MerchantTransaction(
-                        id,
-                        last4,
-                        CardDataMasker.brand(pan),
-                        amountNode.asDouble(),
-                        node.path("currency").asText("BDT"),
-                        node.path("status").asText(""),
-                        Instant.ofEpochSecond(node.path("created_at").asLong())));
+                        id, last4, CardDataMasker.brand(pan), amount, currency,
+                        statusNode.asText(), createdAt));
             }
             return List.copyOf(transactions);
-        } catch (IOException | IllegalArgumentException e) {
+        } catch (IOException | IllegalArgumentException | java.time.DateTimeException e) {
             throw new ScraperException("PAYLOAD_ERROR", "Invalid merchant payload", e);
         }
     }

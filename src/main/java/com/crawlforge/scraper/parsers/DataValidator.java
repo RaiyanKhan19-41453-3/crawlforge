@@ -13,6 +13,10 @@ public final class DataValidator {
 
     /** Score in [0, 1]. Low scores mean missing/empty fields that must not reach the client. */
     public static double score(String url, String content, Map<String, String> attributes) {
+        boolean hasContent = content != null && !content.isBlank();
+        boolean hasAttribute = attributes != null && attributes.values().stream()
+                .anyMatch(value -> value != null && !value.isBlank());
+        if (!hasContent && !hasAttribute) return 0.0;
         double score = 1.0;
         if (url == null || !(url.startsWith("http") || url.startsWith("csv://") || url.startsWith("pdf://"))) {
             score -= 0.4;

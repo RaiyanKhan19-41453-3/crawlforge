@@ -53,7 +53,8 @@ class Round10FeaturesTest {
     @Test
     void signatureWithTrailingNewlineIsAccepted() throws Exception {
         String secret = "webhook-secret";
-        String payload = "{\"transactions\":[{\"id\":\"tx-1\",\"amount\":10.5,\"created_at\":1700000000}]}";
+        String payload = "{\"transactions\":[{\"id\":\"tx-1\",\"amount\":10.5,"
+                + "\"created_at\":1700000000,\"status\":\"approved\"}]}";
         Mac mac = Mac.getInstance("HmacSHA256");
         mac.init(new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), "HmacSHA256"));
         String signature = HexFormat.of().formatHex(mac.doFinal(payload.getBytes(StandardCharsets.UTF_8)));
