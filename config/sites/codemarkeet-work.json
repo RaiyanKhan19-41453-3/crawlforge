@@ -1,0 +1,19 @@
+{
+  "name": "codemarkeet-work",
+  "sourceType": "HTML",
+  "baseUrl": "https://codemarkeet.com",
+  "seedUrls": ["https://codemarkeet.com/work"],
+  "itemSelector": "article:not([x-show])",
+  "xpathFields": {
+    "label": ".//span[starts-with(normalize-space(.),'0')]/text()"
+  },
+  "fields": {
+    "title": "h3",
+    "summary": "p.text-sm",
+    "category": "div.bg-charcoal",
+    "platform": "div.grid-cols-2 span:nth-child(2)"
+  },
+  "maxPages": 1,
+  "maxDepth": 1,
+  "followLinks": false
+}

@@ -71,7 +71,10 @@ public final class XPathSelector {
 
     private static void copyInto(Element source, org.w3c.dom.Element target, Document dom) {
         for (Attribute attribute : source.attributes()) {
-            target.setAttribute(attribute.getKey(), attribute.getValue());
+            String name = attribute.getKey();
+            // Alpine/Vue directives (@click, :class) are not valid XML attribute names.
+            if (!name.matches("[A-Za-z_:][A-Za-z0-9_.:-]*")) continue;
+            target.setAttribute(name, safeXmlText(attribute.getValue()));
         }
         for (Node child : source.childNodes()) {
             if (child instanceof Element element) {
@@ -79,9 +82,22 @@ public final class XPathSelector {
                 target.appendChild(copy);
                 copyInto(element, copy, dom);
             } else if (child instanceof TextNode text) {
-                target.appendChild(dom.createTextNode(text.getWholeText()));
+                target.appendChild(dom.createTextNode(safeXmlText(text.getWholeText())));
             }
         }
+    }
+
+    /** Drops characters that XML 1.0 forbids (control bytes from JS templates, etc.). */
+    private static String safeXmlText(String value) {
+        StringBuilder clean = new StringBuilder(value.length());
+        value.codePoints().forEach(cp -> {
+            boolean valid = cp == 0x9 || cp == 0xA || cp == 0xD
+                    || (cp >= 0x20 && cp <= 0xD7FF)
+                    || (cp >= 0xE000 && cp <= 0xFFFD)
+                    || (cp >= 0x10000 && cp <= 0x10FFFF);
+            if (valid) clean.appendCodePoint(cp);
+        });
+        return clean.toString();
     }
 
     private static Document newSecureDocument() {
