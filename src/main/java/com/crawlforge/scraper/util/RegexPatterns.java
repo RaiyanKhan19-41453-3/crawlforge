@@ -19,5 +19,6 @@ public final class RegexPatterns {
             "\\b\\d{4}-\\d{2}-\\d{2}(?:[T ]\\d{2}:\\d{2}(?::\\d{2})?)?\\b");
     public static final Pattern CARD_PAN = Pattern.compile("\\b(?:\\d[ -]?){13,19}\\b");
     public static final Pattern SKU = Pattern.compile("\\b[A-Z]{2,5}-?\\d{3,8}\\b");
-    public static final Pattern WHITESPACE = Pattern.compile("\\s+");
+    public static final Pattern WHITESPACE = Pattern.compile(
+            "[\\s\\u0085\\u1680\\u2000-\\u200A\\u200B\\u2028\\u2029\\u202F\\u205F\\u3000]+");
 }

@@ -39,6 +39,10 @@ public final class HtmlParser implements Parser {
                 attributes.replaceAll((key, value) -> DataNormalizer.normalize(value));
 
                 String url = item.attr("abs:href");
+                String mappedUrl = attributes.get("url");
+                if (mappedUrl != null && !mappedUrl.isBlank()) {
+                    url = absoluteUrl(mappedUrl, site.baseUrl());
+                }
                 if (url.isBlank() && site.baseUrl() != null) url = site.baseUrl();
                 String title = attributes.getOrDefault("title", firstText(item, "h1,h2,h3,.title"));
                 String content = attributes.getOrDefault("content", readableText(item));
@@ -92,6 +96,16 @@ public final class HtmlParser implements Parser {
         if (selector.startsWith("attr:")) return item.attr(selector.substring(5));
         Element found = item.selectFirst(selector);
         return found == null ? "" : found.text();
+    }
+
+    private static String absoluteUrl(String value, String base) {
+        if (value.startsWith("http")) return value;
+        if (base == null || base.isBlank()) return value;
+        try {
+            return java.net.URI.create(base).resolve(value).toString();
+        } catch (IllegalArgumentException e) {
+            return value;
+        }
     }
 
     /** Jsoup's Element.text() concatenates inline siblings without separators; keep them readable. */

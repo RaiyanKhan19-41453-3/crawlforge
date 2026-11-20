@@ -38,7 +38,10 @@ public final class XPathSelector {
 
     /** Evaluates a relative XPath against an existing W3C DOM node (used by the XML parser). */
     public static List<String> select(org.w3c.dom.Node context, String expression) {
-        return evaluate(expression, context);
+        // In XPath 1.0 "//foo" is document-root-relative even with a context node; make it
+        // item-relative here so each item's fields come from that item only.
+        String relative = expression.startsWith("//") ? "." + expression : expression;
+        return evaluate(relative, context);
     }
 
     public static List<String> selectXml(String xml, String expression) {

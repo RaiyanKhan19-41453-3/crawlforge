@@ -34,8 +34,14 @@ public final class CsvParser implements Parser {
                 rowNumber++;
                 Map<String, String> attributes = new LinkedHashMap<>();
                 if (site.csvHasHeader()) {
-                    for (String header : csv.getHeaderNames()) {
-                        attributes.put(header, DataNormalizer.normalize(row.isMapped(header) ? row.get(header) : ""));
+                    List<String> headers = List.copyOf(csv.getHeaderNames());
+                    Map<String, Integer> occurrences = new LinkedHashMap<>();
+                    for (int i = 0; i < headers.size(); i++) {
+                        String header = headers.get(i);
+                        int count = occurrences.merge(header, 1, Integer::sum);
+                        String key = count == 1 ? header : header + "_" + count;
+                        attributes.put(key, DataNormalizer.normalize(
+                                row.size() > i ? row.get(i) : ""));
                     }
                     site.fields().forEach((name, column) -> {
                         if (attributes.containsKey(column)) attributes.putIfAbsent(name, attributes.get(column));
