@@ -1,0 +1,20 @@
+{
+  "name": "codemarkeet-blog",
+  "sourceType": "HTML",
+  "baseUrl": "https://codemarkeet.com",
+  "seedUrls": ["https://codemarkeet.com/blog"],
+  "itemSelector": "article",
+  "fields": {
+    "title": "h2",
+    "summary": "p.line-clamp-3",
+    "category": "span.bg-charcoal",
+    "author": "span.font-semibold",
+    "date": "div.gap-2 span:nth-child(3)"
+  },
+  "xpathFields": {
+    "url": ".//h2/a/@href"
+  },
+  "maxPages": 1,
+  "maxDepth": 1,
+  "followLinks": false
+}
