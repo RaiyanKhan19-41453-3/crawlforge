@@ -34,7 +34,7 @@ public final class RetryPolicy {
     /** Delay before the next attempt. attemptNumber is 1-based. */
     public Duration delayFor(int attemptNumber) {
         long multiplier = exponential ? (1L << Math.min(Math.max(attemptNumber - 1, 0), 16)) : 1L;
-        long delay = baseDelayMs * multiplier;
+        long delay = baseDelayMs > Long.MAX_VALUE / multiplier ? maxDelayMs : baseDelayMs * multiplier;
         return Duration.ofMillis(Math.min(delay, maxDelayMs));
     }
 

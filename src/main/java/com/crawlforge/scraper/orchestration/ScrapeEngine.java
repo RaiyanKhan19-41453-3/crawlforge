@@ -36,6 +36,8 @@ public final class ScrapeEngine {
         int seedCount = Math.max(1, job.seedUrls().size());
         ExecutorService pool = WorkerPoolExecutor.newPool(Math.min(config.maxThreads(), seedCount));
         List<Future<List<ScrapedRecord>>> futures = new ArrayList<>();
+        // One shared budget across all seeds: maxPages is a total, not a per-seed allowance.
+        java.util.concurrent.atomic.AtomicInteger pageBudget = new java.util.concurrent.atomic.AtomicInteger(job.maxPages());
 
         for (int i = 0; i < job.seedUrls().size(); i++) {
             final String seed = job.seedUrls().get(i);
@@ -44,12 +46,12 @@ public final class ScrapeEngine {
                     .name(job.name() + " [" + seed + "]")
                     .site(job.site())
                     .seedUrl(seed)
-                    .maxPages(Math.max(1, job.maxPages() / seedCount))
+                    .maxPages(job.maxPages())
                     .maxDepth(job.maxDepth())
                     .build();
             futures.add(pool.submit(() -> {
-                Crawler crawler = crawlerFactory.create(job.site().sourceType());
-                CrawlContext context = new CrawlContext();
+                Crawler crawler = crawlerFactory.create(job.site().sourceType(), job.site());
+                CrawlContext context = new CrawlContext(pageBudget);
                 List<ScrapedRecord> records = crawler.crawl(subJob, context);
                 job.aggregate(context.pages(), records.size(), context.failures());
                 metrics.addPages(context.pages());
@@ -66,6 +68,7 @@ public final class ScrapeEngine {
                 metrics.addRecords(records.size());
             } catch (Exception e) {
                 log.error("Worker failed: {}", e.getMessage());
+                job.aggregate(0, 0, 1);
                 metrics.addFailures(1);
             }
         }

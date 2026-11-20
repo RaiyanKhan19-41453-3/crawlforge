@@ -37,6 +37,15 @@ public final class StaticCrawler extends AbstractCrawler {
     }
 
     @Override
+    protected String fetchRaw(String url, ScrapeJob job) {
+        if (job.site().sourceType() == com.crawlforge.scraper.core.model.SourceType.PDF) {
+            // ISO-8859-1 is a lossless byte-to-char transport for the PDFBox parser.
+            return new String(http.fetchBytes(url).body(), java.nio.charset.StandardCharsets.ISO_8859_1);
+        }
+        return super.fetchRaw(url, job);
+    }
+
+    @Override
     protected List<String> discoverLinks(String raw, ScrapeJob job, String pageUrl) {
         return pagination.discover(raw, job.site(), pageUrl);
     }

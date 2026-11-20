@@ -11,6 +11,8 @@ import com.crawlforge.scraper.http.ResilientHttpClient;
 import com.crawlforge.scraper.orchestration.EngineResult;
 import com.crawlforge.scraper.orchestration.ScrapeEngine;
 import com.crawlforge.scraper.parsers.ParserRegistry;
+import com.crawlforge.scraper.persistence.DatabaseManager;
+import com.crawlforge.scraper.persistence.RecordRepository;
 import java.nio.file.Path;
 import java.util.Map;
 import picocli.CommandLine;
@@ -18,7 +20,7 @@ import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 
 /** CLI entry point for the fat jar used in Docker, on a VDI or on any client platform. */
-@Command(name = "crawlforge", mixinStandardHelpOptions = true,
+@Command(name = "crawlforge", version = "CrawlForge 1.0.0", mixinStandardHelpOptions = true,
         description = "Enterprise Java/Groovy web scraping engine with data-quality and anti-bot tooling")
 public final class CrawlForgeApplication implements Runnable {
 
@@ -40,6 +42,9 @@ public final class CrawlForgeApplication implements Runnable {
     @Option(names = {"--demo"}, description = "Run against the built-in offline demo website")
     private boolean demo;
 
+    @Option(names = {"--persist"}, description = "Also write records to the configured SQL database")
+    private boolean persist;
+
     @Override
     public void run() {
         ScraperConfig config = ScraperConfig.load(configPath);
@@ -54,7 +59,7 @@ public final class CrawlForgeApplication implements Runnable {
                 runDemo(scrapeEngine, config);
                 return;
             }
-            runConfiguredSite(scrapeEngine);
+            runConfiguredSite(scrapeEngine, config);
         } catch (Exception e) {
             System.err.println("Crawl failed: " + e.getMessage());
             e.printStackTrace(System.err);
@@ -82,10 +87,24 @@ public final class CrawlForgeApplication implements Runnable {
             String target = output == null ? Path.of(config.outputDir(), "demo-records.csv").toString() : output;
             EngineResult result = engine.execute(job, target);
             printSummary(result, target);
+            persistIfRequested(result, config);
         }
     }
 
-    private void runConfiguredSite(ScrapeEngine engine) {
+    private void persistIfRequested(EngineResult result, ScraperConfig config) {
+        if (!persist) return;
+        if (!config.databaseEnabled()) {
+            System.out.println("Persistence skipped: no SCRAPER_DB_URL configured.");
+            return;
+        }
+        DatabaseManager database = new DatabaseManager(config);
+        database.initializeSchema(Path.of("sql", "schema.sql"));
+        RecordRepository repository = new RecordRepository(database);
+        int saved = repository.saveAll(result.records());
+        System.out.println("Persisted: " + saved + " rows (" + repository.qualitySummary() + ")");
+    }
+
+    private void runConfiguredSite(ScrapeEngine engine, ScraperConfig config) {
         Map<String, SiteConfig> sites = new SiteConfigLoader().loadAll(sitesDir);
         if (siteName == null || !sites.containsKey(siteName)) {
             System.out.println("Available site recipes: " + sites.keySet());
@@ -95,9 +114,10 @@ public final class CrawlForgeApplication implements Runnable {
         SiteConfig site = sites.get(siteName);
         ScrapeJob job = ScrapeJob.builder().name(site.name()).site(site).build();
         String target = output == null
-                ? Path.of("output", site.name() + ".json").toString() : output;
+                ? Path.of(config.outputDir(), site.name() + ".json").toString() : output;
         EngineResult result = engine.execute(job, target);
         printSummary(result, target);
+        persistIfRequested(result, config);
     }
 
     private static void printSummary(EngineResult result, String target) {

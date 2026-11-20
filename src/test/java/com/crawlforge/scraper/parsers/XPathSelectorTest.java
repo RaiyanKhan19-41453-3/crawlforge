@@ -18,6 +18,13 @@ class XPathSelectorTest {
     }
 
     @Test
+    void evaluatesRelativeXpathAgainstElement() {
+        var element = Jsoup.parse("<div><span id='sku'>SKU-42</span></div>").selectFirst("div");
+        assertEquals(java.util.List.of("SKU-42"),
+                XPathSelector.select(element, "span[@id='sku']/text()"));
+    }
+
+    @Test
     void evaluatesXpathAgainstXmlString() {
         List<String> values = XPathSelector.selectXml(
                 "<root><item><title>A</title></item></root>", "//item/title/text()");

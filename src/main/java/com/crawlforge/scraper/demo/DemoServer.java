@@ -20,7 +20,7 @@ public final class DemoServer implements AutoCloseable {
         HttpServer server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
         server.createContext("/page/", exchange -> {
             String path = exchange.getRequestURI().getPath();
-            String html = path.endsWith("2") ? pageTwo() : pageOne();
+            String html = "/page/2".equals(path) ? pageTwo() : pageOne();
             respond(exchange, html, "text/html; charset=utf-8");
         });
         server.createContext("/api/products", exchange -> respond(exchange,

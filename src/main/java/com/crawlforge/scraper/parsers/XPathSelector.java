@@ -33,7 +33,7 @@ public final class XPathSelector {
         org.w3c.dom.Element root = dom.createElement("root");
         dom.appendChild(root);
         copyInto(context, root, dom);
-        return evaluate(expression, dom);
+        return evaluate(expression, root);
     }
 
     /** Evaluates a relative XPath against an existing W3C DOM node (used by the XML parser). */

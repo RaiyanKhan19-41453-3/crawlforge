@@ -16,4 +16,9 @@ public interface Parser {
 
     /** Default no-op hook for parsers that also discover links. */
     default List<String> links(String raw, SiteConfig site) { return List.of(); }
+
+    /** Variant that resolves relative hrefs against the page being crawled. */
+    default List<String> links(String raw, SiteConfig site, String pageUrl) {
+        return links(raw, site);
+    }
 }

@@ -25,6 +25,7 @@ public final class JsonParser implements Parser {
     public List<ScrapedRecord> parse(String raw, SiteConfig site) {
         try {
             JsonNode root = mapper.readTree(raw);
+            if (root == null || root.isMissingNode()) return List.of();
             JsonNode collection = resolvePath(root, site.jsonResultPath());
             List<JsonNode> nodes = new ArrayList<>();
             if (collection != null && collection.isArray()) {
@@ -46,6 +47,11 @@ public final class JsonParser implements Parser {
                             attributes.put(name, text(node.at(pointer.startsWith("/") ? pointer : "/" + pointer))));
                 }
                 attributes.replaceAll((key, value) -> DataNormalizer.normalize(value));
+                // jsonIdField is the client's identifier column when fields do not map it.
+                if (!attributes.containsKey("id") && site.jsonIdField() != null) {
+                    String id = text(node.at("/" + site.jsonIdField()));
+                    if (!id.isBlank()) attributes.put("id", id);
+                }
 
                 String url = text(node.at("/url"));
                 if (url.isBlank()) url = site.baseUrl();

@@ -61,7 +61,7 @@ docker run --rm --user "$(id -u):$(id -g)" \
 | **AI-driven development** | `CLAUDE.md`, `AGENTS.md`, real prompt library in `docs/AI_ASSISTED_WORKFLOW.md` |
 | **DevOps** | Dockerfile, docker-compose, GitHub Actions CI, JIRA/PR/issue templates |
 | **Cross-platform / IDEs** | `.vscode/`, `.idea/`, `scripts/*.sh` and `scripts/*.bat` |
-| **Data quality** | Per-record quality score, validator gate, 44 automated tests |
+| **Data quality** | Per-record quality score, validator gate, 52 automated tests |
 
 ---
 
@@ -133,4 +133,4 @@ scripts/           Docker-only build/run wrappers for Linux and Windows
 - Anti-bot code is intended for reliability on **authorised** client sites; it respects
   rate limits and never bypasses access controls or CAPTCHAs fraudulently.
 - The built-in demo server exists so the full pipeline can be verified without a live site.
-- Every claim in this README is backed by code and an automated test.
+- Core behaviour is covered by 52 automated tests; run `./scripts/build.sh` to verify.

@@ -66,4 +66,43 @@ class ScrapeEngineTest {
             }
         }
     }
+
+    @Test
+    void enforcesTotalPageBudgetAcrossMultipleSeeds() throws Exception {
+        try (LocalServer server = LocalServer.start()) {
+            server.route("/page/", exchange -> LocalServer.respond(exchange, 200,
+                    "<div class='product'><h2 class='title'>Item</h2></div>"));
+
+            Path properties = Files.createTempFile("crawlforge-budget", ".properties");
+            Files.writeString(properties, """
+                    scraper.retry.attempts=1
+                    scraper.rate.requestsPerSecond=1000
+                    scraper.maxThreads=3
+                    """);
+            ScraperConfig config = ScraperConfig.load(properties);
+
+            SiteConfig site = SiteConfig.builder()
+                    .name("budget-test")
+                    .sourceType(SourceType.HTML)
+                    .baseUrl(server.url(""))
+                    .seedUrl(server.url("/page/1"))
+                    .seedUrl(server.url("/page/2"))
+                    .seedUrl(server.url("/page/3"))
+                    .itemSelector(".product")
+                    .field("title", "h2.title")
+                    .followLinks(false)
+                    .maxPages(2)
+                    .maxDepth(1)
+                    .build();
+
+            try (ResilientHttpClient http = new ResilientHttpClient(config)) {
+                ScrapeEngine engine = new ScrapeEngine(config,
+                        new CrawlerFactory(config, http, new ParserRegistry()));
+                EngineResult result = engine.execute(
+                        ScrapeJob.builder().name("budget-test").site(site).build());
+                assertEquals(2, result.metrics().get("pages"));
+                assertEquals(2, result.records().size());
+            }
+        }
+    }
 }

@@ -21,8 +21,17 @@ public final class CrawlerFactory {
     }
 
     public Crawler create(SourceType type) {
+        return create(type, null);
+    }
+
+    /** Site-aware selection: a recipe requesting JavaScript never uses the static crawler. */
+    public Crawler create(SourceType type, com.crawlforge.scraper.core.config.SiteConfig site) {
         String engine = System.getProperty("crawler.engine", "auto");
-        if (type == SourceType.HTML) return new StaticCrawler(http, registry, pagination);
+        boolean needsJs = site != null && site.javascriptRequired();
+        if (type == SourceType.HTML && !needsJs) return new StaticCrawler(http, registry, pagination);
+        if (needsJs && type != SourceType.DYNAMIC_HTML) {
+            type = SourceType.DYNAMIC_HTML;
+        }
         if (type == SourceType.DYNAMIC_HTML) {
             if ("playwright".equalsIgnoreCase(engine)) return new PlaywrightCrawler(config, registry, pagination);
             if ("selenium".equalsIgnoreCase(engine) || config.javascriptEnabled()) {

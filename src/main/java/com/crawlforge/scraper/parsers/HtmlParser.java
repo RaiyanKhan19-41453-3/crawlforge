@@ -59,9 +59,15 @@ public final class HtmlParser implements Parser {
 
     @Override
     public List<String> links(String raw, SiteConfig site) {
-        Document doc = Jsoup.parse(raw, site.baseUrl() == null ? "" : site.baseUrl());
+        return links(raw, site, site.baseUrl());
+    }
+
+    @Override
+    public List<String> links(String raw, SiteConfig site, String pageUrl) {
+        String base = pageUrl == null || pageUrl.isBlank() ? site.baseUrl() : pageUrl;
+        Document doc = Jsoup.parse(raw, base == null ? "" : base);
         List<String> links = new ArrayList<>();
-        if (site.nextPageSelector() != null) {
+        if (site.nextPageSelector() != null && !site.nextPageSelector().isBlank()) {
             Element next = doc.selectFirst(site.nextPageSelector());
             if (next != null) addIfUseful(links, next.attr("abs:href"));
         }

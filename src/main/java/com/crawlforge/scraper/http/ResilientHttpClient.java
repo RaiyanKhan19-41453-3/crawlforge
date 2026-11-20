@@ -86,8 +86,13 @@ public final class ResilientHttpClient implements AutoCloseable {
                 .build();
     }
 
-    /** GET a URL with retries, backoff and full anti-bot handling. */
-    public HttpResponse fetch(String url) {
+    @FunctionalInterface
+    private interface RequestAction<T> {
+        T run(org.apache.hc.client5.http.classic.methods.HttpUriRequestBase request) throws IOException;
+    }
+
+    /** Shared retry/backoff/rate-limit shell for text and binary fetches. */
+    private <T> T withRetries(String url, RequestAction<T> action) {
         Exception last = null;
         for (int attempt = 1; attempt <= retryPolicy.maxAttempts(); attempt++) {
             try {
@@ -95,8 +100,7 @@ public final class ResilientHttpClient implements AutoCloseable {
                 HttpGet get = new HttpGet(URI.create(url));
                 get.setConfig(requestConfig());
                 applyStealthHeaders(get, url);
-                HttpResponse response = execute(get, url);
-                return validate(response);
+                return action.run(get);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 throw new FetchException("Fetch interrupted for " + url, e);
@@ -111,6 +115,22 @@ public final class ResilientHttpClient implements AutoCloseable {
         }
         throw new RetryExhaustedException("Fetch failed after " + retryPolicy.maxAttempts()
                 + " attempts: " + url, last);
+    }
+
+    /** GET a URL as text with retries, backoff and full anti-bot handling. */
+    public HttpResponse fetch(String url) {
+        return withRetries(url, request -> validate(execute(request, url)));
+    }
+
+    /** GET a URL as raw bytes; never decodes binary formats such as PDF. */
+    public BinaryResponse fetchBytes(String url) {
+        return withRetries(url, request -> new BinaryResponse(
+                client.execute(request, response -> {
+                    int status = response.getCode();
+                    if (status >= 400) throw new FetchException("HTTP " + status + " from " + url);
+                    return response.getEntity() == null
+                            ? new byte[0] : response.getEntity().getContent().readAllBytes();
+                })));
     }
 
     /** Form POST used by login flows. */

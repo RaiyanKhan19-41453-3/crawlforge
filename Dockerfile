@@ -14,7 +14,7 @@ RUN mkdir -p /app/output && chown -R 1000:1000 /app
 WORKDIR /app
 COPY --from=build --chown=1000:1000 /workspace/target/crawlforge.jar /app/crawlforge.jar
 COPY --chown=1000:1000 config /app/config
+COPY --chown=1000:1000 sql /app/sql
 USER 1000:1000
-EXPOSE 8080
 ENTRYPOINT ["java", "-jar", "/app/crawlforge.jar"]
 CMD ["--demo", "--output", "/app/output/demo-records.csv"]

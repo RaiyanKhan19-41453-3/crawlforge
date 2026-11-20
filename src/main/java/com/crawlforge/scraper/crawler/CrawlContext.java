@@ -16,6 +16,12 @@ public final class CrawlContext {
     private final AtomicInteger pages = new AtomicInteger();
     private final AtomicInteger records = new AtomicInteger();
     private final AtomicInteger failures = new AtomicInteger();
+    private final AtomicInteger sharedBudget;
+
+    public CrawlContext() { this(null); }
+
+    /** A context sharing one page budget with sibling workers in the same job. */
+    public CrawlContext(AtomicInteger sharedBudget) { this.sharedBudget = sharedBudget; }
 
     public boolean enqueue(String url, int depth) {
         if (url == null || url.isBlank() || visited.contains(url)) return false;
@@ -25,6 +31,12 @@ public final class CrawlContext {
             return true;
         }
         return false;
+    }
+
+    /** Atomically claims one page from the shared budget. Returns false when exhausted. */
+    public boolean tryReservePage() {
+        if (sharedBudget == null) return true;
+        return sharedBudget.getAndUpdate(value -> value > 0 ? value - 1 : 0) > 0;
     }
 
     public String poll() { return frontier.poll(); }

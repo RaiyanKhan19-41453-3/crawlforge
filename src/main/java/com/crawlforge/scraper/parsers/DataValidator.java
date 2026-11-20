@@ -14,7 +14,9 @@ public final class DataValidator {
     /** Score in [0, 1]. Low scores mean missing/empty fields that must not reach the client. */
     public static double score(String url, String content, Map<String, String> attributes) {
         double score = 1.0;
-        if (url == null || !url.startsWith("http")) score -= 0.4;
+        if (url == null || !(url.startsWith("http") || url.startsWith("csv://") || url.startsWith("pdf://"))) {
+            score -= 0.4;
+        }
         if (content == null || content.isBlank()) score -= 0.3;
         else if (content.length() < 8) score -= 0.1;
         if (attributes == null || attributes.isEmpty()) score -= 0.3;

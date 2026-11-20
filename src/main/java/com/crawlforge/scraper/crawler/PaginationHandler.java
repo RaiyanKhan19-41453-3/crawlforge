@@ -15,7 +15,7 @@ public final class PaginationHandler {
 
     public List<String> discover(String html, SiteConfig site, String pageUrl) {
         List<String> resolved = new ArrayList<>();
-        for (String rawLink : parserRegistry.links(html, site)) {
+        for (String rawLink : parserRegistry.links(html, site, pageUrl)) {
             String absolute = absolutize(pageUrl, rawLink);
             if (absolute != null && allowed(absolute, site) && !resolved.contains(absolute)) {
                 resolved.add(absolute);

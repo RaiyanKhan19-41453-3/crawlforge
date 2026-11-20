@@ -52,8 +52,11 @@ public final class ScraperConfig {
 
     public static ScraperConfig load(Path path) {
         Properties props = new Properties();
+        if (path != null && !Files.exists(path)) {
+            throw new ConfigurationException("Configuration file not found: " + path);
+        }
         try {
-            if (path != null && Files.exists(path)) {
+            if (path != null) {
                 try (InputStream in = Files.newInputStream(path)) { props.load(in); }
             } else {
                 try (InputStream in = ScraperConfig.class.getClassLoader().getResourceAsStream("application.properties")) {

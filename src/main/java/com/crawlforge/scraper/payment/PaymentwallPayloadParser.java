@@ -24,6 +24,9 @@ public final class PaymentwallPayloadParser {
         verifySignature(payload, signature, secret);
         try {
             JsonNode root = mapper.readTree(payload);
+            if (root == null || !root.has("transactions")) {
+                throw new ScraperException("PAYLOAD_ERROR", "Merchant payload has no transactions");
+            }
             JsonNode items = root.path("transactions");
             List<MerchantTransaction> transactions = new ArrayList<>();
             for (JsonNode node : items) {

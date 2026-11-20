@@ -33,4 +33,13 @@ class PaginationHandlerTest {
         assertTrue(handler.discover(html, site, "http://shop.test/page/1")
                 .contains("http://shop.test/page/2"));
     }
+
+    @Test
+    void resolvesRelativeLinksAgainstCurrentPage() {
+        SiteConfig site = SiteConfig.builder().name("shop").baseUrl("http://shop.test")
+                .nextPageSelector("a.next").followLinks(false).build();
+        String html = "<a class='next' href='product/2'>Next</a>";
+        assertTrue(handler.discover(html, site, "http://shop.test/page/1")
+                .contains("http://shop.test/page/product/2"));
+    }
 }

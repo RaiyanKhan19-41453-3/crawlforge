@@ -5,7 +5,7 @@ Nothing needs to be installed on the host except **Docker** and **Git**.
 ## Linux / Ubuntu
 
 ```bash
-git clone <your-repo-url> crawlforge
+git clone https://github.com/RaiyanKhan19-41453-3/crawlforge.git
 cd crawlforge
 chmod +x scripts/*.sh
 ./scripts/build.sh                 # builds and runs all tests in a container
@@ -16,7 +16,7 @@ docker compose up --build          # demo + PostgreSQL
 ## Windows (PowerShell)
 
 ```powershell
-git clone <your-repo-url> crawlforge
+git clone https://github.com/RaiyanKhan19-41453-3/crawlforge.git
 cd crawlforge
 .\scripts\build.bat
 docker build -t crawlforge .

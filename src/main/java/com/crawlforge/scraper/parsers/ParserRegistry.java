@@ -40,8 +40,12 @@ public final class ParserRegistry {
     }
 
     public List<String> links(String raw, SiteConfig site) {
+        return links(raw, site, site.baseUrl());
+    }
+
+    public List<String> links(String raw, SiteConfig site, String pageUrl) {
         SourceType type = site.sourceType();
         SourceType effective = type == SourceType.DYNAMIC_HTML ? SourceType.HTML : type;
-        return parserFor(effective).links(raw, site);
+        return parserFor(effective).links(raw, site, pageUrl);
     }
 }

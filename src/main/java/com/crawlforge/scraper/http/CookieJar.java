@@ -19,8 +19,12 @@ public final class CookieJar {
     /** Cookie header value for a given host, useful when handing sessions to Selenium/HtmlUnit. */
     public String cookieHeaderFor(String host) {
         StringBuilder header = new StringBuilder();
+        String hostname = host.toLowerCase(java.util.Locale.ROOT);
         for (Cookie cookie : store.getCookies()) {
-            if (cookie.getDomain() == null || host.contains(cookie.getDomain().replaceFirst("^\\.", ""))) {
+            String domain = cookie.getDomain() == null ? "" : cookie.getDomain()
+                    .replaceFirst("^\\.", "").toLowerCase(java.util.Locale.ROOT);
+            boolean matches = domain.isEmpty() || hostname.equals(domain) || hostname.endsWith("." + domain);
+            if (matches) {
                 if (header.length() > 0) header.append("; ");
                 header.append(cookie.getName()).append('=').append(cookie.getValue());
             }

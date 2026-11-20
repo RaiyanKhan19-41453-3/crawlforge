@@ -29,7 +29,7 @@ public final class MetricsCollector {
         values.put("retries", retries.get());
         values.put("captchas", captchas.get());
         values.put("blocked", blocked.get());
-        return Map.copyOf(values);
+        return java.util.Collections.unmodifiableMap(values);
     }
 
     public String summary() { return snapshot().toString(); }
