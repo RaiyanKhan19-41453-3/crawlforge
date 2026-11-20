@@ -15,6 +15,15 @@ import org.junit.jupiter.api.Test;
 class RecordRepositoryTest {
 
     @Test
+    void schemaSplitterRespectsCommentsAndStringLiterals() {
+        var statements = DatabaseManager.splitStatements(
+                "-- demo; note with semicolon\nCREATE TABLE t (v VARCHAR(20));\n"
+                        + "INSERT INTO t (v) VALUES ('semi;colon');\n");
+        assertEquals(2, statements.size());
+        assertTrue(statements.get(1).contains("'semi;colon'"));
+    }
+
+    @Test
     void persistsAndReportsQualityWithH2() throws IOException {
         Path properties = Files.createTempFile("crawlforge-db", ".properties");
         Files.writeString(properties, "scraper.db.url=jdbc:h2:mem:" + UUID.randomUUID()

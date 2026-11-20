@@ -43,11 +43,11 @@
 | Merchant/payment API integration | `payment/PaymentwallPayloadParser.java` (HMAC-SHA256 verification), `payment/CardDataMasker.java`, `payment/MerchantTransaction.java` |
 | BPO / data-entry industry data challenges | `docs/CLIENT_DOMAIN_NOTES.md` (accuracy SLAs, auditability, high-volume feeds, PII/PCI handling) |
 | Client-ready output formats | `export/CsvWriter`, `JsonWriter`, `ExcelWriter` and the Groovy `IntegrationPayloadBuilder` |
-| Maintainability and knowledge sharing | `docs/ARCHITECTURE.md`, Javadoc, declarative site recipes in `config/sites`, 117 automated tests |
+| Maintainability and knowledge sharing | `docs/ARCHITECTURE.md`, Javadoc, declarative site recipes in `config/sites`, 118 automated tests |
 
 ## Verification
 
 ```bash
-./scripts/build.sh       # 117 tests, all inside Docker
+./scripts/build.sh       # 118 tests, all inside Docker
 docker compose up --build # offline end-to-end demo, writes output/demo-records.csv
 ```
