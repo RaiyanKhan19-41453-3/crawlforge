@@ -5,7 +5,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.crawlforge.scraper.core.config.ScraperConfig;
-import com.crawlforge.scraper.core.exception.RetryExhaustedException;
 import com.crawlforge.scraper.testsupport.LocalServer;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -50,11 +49,11 @@ class ResilientHttpClientTest {
             server.route("/captcha", exchange ->
                     LocalServer.respond(exchange, 200, "<html>Please solve the reCAPTCHA</html>"));
             try (ResilientHttpClient http = new ResilientHttpClient(fastConfig())) {
-                RetryExhaustedException error = assertThrows(RetryExhaustedException.class,
-                        () -> http.fetch(server.url("/captcha")));
-                assertTrue(error.toString().contains("CAPTCHA")
-                        || error.getCause() != null && error.getCause().getMessage().contains("CAPTCHA"));
-                assertEquals(3, http.captchaChallenges());
+                com.crawlforge.scraper.core.exception.CaptchaDetectedException error =
+                        assertThrows(com.crawlforge.scraper.core.exception.CaptchaDetectedException.class,
+                                () -> http.fetch(server.url("/captcha")));
+                assertEquals("CAPTCHA_ERROR", error.errorCode());
+                assertEquals(1, http.captchaChallenges());
             }
         }
     }

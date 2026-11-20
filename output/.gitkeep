@@ -1,0 +1,1 @@
+# Keeps the output directory present in a fresh clone so Docker compose can mount it writable.

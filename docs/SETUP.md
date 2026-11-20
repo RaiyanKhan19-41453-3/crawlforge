@@ -53,6 +53,7 @@ Copy `.env.example` to `.env` (never commit the real values) and pass them with
 | `SCRAPER_MAX_THREADS` | Parallel worker count |
 | `SCRAPER_DB_URL` | JDBC URL, e.g. `jdbc:postgresql://postgres:5432/crawlforge` |
 | `SCRAPER_DB_USER` / `SCRAPER_DB_PASSWORD` | Database credentials |
+| `SCRAPER_SITE_USERNAME` / `SCRAPER_SITE_PASSWORD` | Optional site login, overrides values in site recipes (do not commit real credentials) |
 
 ## Verifying the build
 

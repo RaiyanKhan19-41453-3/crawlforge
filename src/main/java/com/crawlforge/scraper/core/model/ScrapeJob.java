@@ -66,6 +66,10 @@ public final class ScrapeJob {
         this.failures += failures;
     }
     public synchronized void finish() {
+        if (status == JobStatus.FAILED) {
+            if (finishedAt == null) finishedAt = Instant.now();
+            return;
+        }
         status = failures == 0 ? JobStatus.SUCCEEDED
                 : (recordsExtracted > 0 ? JobStatus.PARTIAL : JobStatus.FAILED);
         finishedAt = Instant.now();

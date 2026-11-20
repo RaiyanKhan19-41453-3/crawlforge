@@ -16,7 +16,7 @@ class CrawlerFactoryTest {
     void selectsCrawlerBySourceTypeAndRecipe() throws Exception {
         ScraperConfig config = ScraperConfig.defaults();
         try (ResilientHttpClient http = new ResilientHttpClient(config)) {
-            CrawlerFactory factory = new CrawlerFactory(config, http, new ParserRegistry());
+            CrawlerFactory factory = new CrawlerFactory(config, http, new ParserRegistry(), "auto");
 
             assertInstanceOf(StaticCrawler.class, factory.create(SourceType.HTML));
             assertInstanceOf(StaticCrawler.class, factory.create(SourceType.JSON));

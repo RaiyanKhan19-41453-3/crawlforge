@@ -14,7 +14,8 @@ class RetryPolicyTest {
         RetryPolicy policy = RetryPolicy.exponential(4, 100, 1000);
         assertEquals(Duration.ofMillis(100), policy.delayFor(1));
         assertEquals(Duration.ofMillis(200), policy.delayFor(2));
-        assertEquals(Duration.ofMillis(1000), policy.delayFor(10));
+        assertEquals(Duration.ofMillis(400), policy.delayFor(3));
+        assertEquals(Duration.ofMillis(1000), policy.delayFor(100)); // capped
         assertTrue(policy.shouldRetry(3));
         assertFalse(policy.shouldRetry(4));
     }

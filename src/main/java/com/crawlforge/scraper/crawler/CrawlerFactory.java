@@ -12,12 +12,19 @@ public final class CrawlerFactory {
     private final ResilientHttpClient http;
     private final ParserRegistry registry;
     private final PaginationHandler pagination;
+    private final String engine;
 
     public CrawlerFactory(ScraperConfig config, ResilientHttpClient http, ParserRegistry registry) {
+        this(config, http, registry, System.getProperty("crawler.engine", "auto"));
+    }
+
+    public CrawlerFactory(ScraperConfig config, ResilientHttpClient http, ParserRegistry registry,
+                          String engine) {
         this.config = config;
         this.http = http;
         this.registry = registry;
         this.pagination = new PaginationHandler(registry);
+        this.engine = engine == null ? "auto" : engine;
     }
 
     public Crawler create(SourceType type) {
@@ -26,10 +33,14 @@ public final class CrawlerFactory {
 
     /** Site-aware selection: a recipe requesting JavaScript never uses the static crawler. */
     public Crawler create(SourceType type, com.crawlforge.scraper.core.config.SiteConfig site) {
-        String engine = System.getProperty("crawler.engine", "auto");
         boolean needsJs = site != null && site.javascriptRequired();
-        if (type == SourceType.HTML && !needsJs) return new StaticCrawler(http, registry, pagination);
-        if (needsJs && type != SourceType.DYNAMIC_HTML) {
+        boolean forced = !"auto".equalsIgnoreCase(engine);
+        if (type == SourceType.HTML && !needsJs && !forced) {
+            return new StaticCrawler(http, registry, pagination);
+        }
+        if ((needsJs || forced) && type != SourceType.DYNAMIC_HTML
+                && type != SourceType.JSON && type != SourceType.XML
+                && type != SourceType.CSV && type != SourceType.PDF) {
             type = SourceType.DYNAMIC_HTML;
         }
         if (type == SourceType.DYNAMIC_HTML) {

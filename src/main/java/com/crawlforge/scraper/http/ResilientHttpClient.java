@@ -101,6 +101,9 @@ public final class ResilientHttpClient implements AutoCloseable {
                 get.setConfig(requestConfig());
                 applyStealthHeaders(get, url);
                 return action.run(get);
+            } catch (CaptchaDetectedException e) {
+                // A solver returning false means "unrecoverable": fail fast, do not re-challenge.
+                throw e;
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 throw new FetchException("Fetch interrupted for " + url, e);

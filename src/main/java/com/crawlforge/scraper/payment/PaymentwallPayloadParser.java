@@ -5,6 +5,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.crawlforge.scraper.core.exception.ScraperException;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.util.Locale;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HexFormat;
@@ -60,7 +62,9 @@ public final class PaymentwallPayloadParser {
             Mac mac = Mac.getInstance("HmacSHA256");
             mac.init(new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), "HmacSHA256"));
             String expected = HexFormat.of().formatHex(mac.doFinal(payload.getBytes(StandardCharsets.UTF_8)));
-            if (!expected.equalsIgnoreCase(signature == null ? "" : signature)) {
+            String supplied = signature == null ? "" : signature.toLowerCase(Locale.ROOT);
+            if (!MessageDigest.isEqual(expected.getBytes(StandardCharsets.UTF_8),
+                    supplied.getBytes(StandardCharsets.UTF_8))) {
                 throw new ScraperException("SIGNATURE_ERROR", "Merchant webhook signature mismatch");
             }
         } catch (Exception e) {

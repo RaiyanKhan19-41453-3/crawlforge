@@ -31,9 +31,14 @@ class GroovyAutomationTest {
     }
 
     @Test
-    void groovyIntegrationPayloadContainsClientName() {
-        String payload = IntegrationPayloadBuilder.build(List.of(), "Test Client");
+    void groovyIntegrationPayloadMapsRecords() {
+        List<ScrapedRecord> records = List.of(
+                ScrapedRecord.builder().source("demo").url("http://demo/1").title("Widget A")
+                        .attribute("price", "100").build());
+        String payload = IntegrationPayloadBuilder.build(records, "Test Client");
         assertTrue(payload.contains("Test Client"));
-        assertTrue(payload.contains("\"count\""));
+        assertTrue(payload.contains("Widget A"));
+        assertTrue(payload.contains("price"));
+        assertTrue(payload.replaceAll("\\s", "").contains("\"count\":1"));
     }
 }

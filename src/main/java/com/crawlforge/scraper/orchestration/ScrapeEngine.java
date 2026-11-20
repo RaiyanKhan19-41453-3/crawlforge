@@ -68,17 +68,24 @@ public final class ScrapeEngine {
                 metrics.addRecords(records.size());
             } catch (Exception e) {
                 log.error("Worker failed: {}", e.getMessage());
+                future.cancel(true);
                 job.aggregate(0, 0, 1);
                 metrics.addFailures(1);
             }
         }
         WorkerPoolExecutor.shutdown(pool, 30);
 
-        if (outputTarget != null && !outputTarget.isBlank()) {
-            WriterFactory.forTarget(outputTarget).write(all, outputTarget);
-            log.info("Wrote {} records to {}", all.size(), outputTarget);
+        try {
+            if (outputTarget != null && !outputTarget.isBlank()) {
+                WriterFactory.forTarget(outputTarget).write(all, outputTarget);
+                log.info("Wrote {} records to {}", all.size(), outputTarget);
+            }
+        } catch (RuntimeException e) {
+            job.fail(e);
+            throw e;
+        } finally {
+            job.finish();
         }
-        job.finish();
         return new EngineResult(all, metrics.snapshot(), System.currentTimeMillis() - started);
     }
 

@@ -25,24 +25,42 @@ public final class RecordRepository {
     /** Batch insert with a single transaction. */
     public int saveAll(List<ScrapedRecord> records) {
         if (records.isEmpty()) return 0;
-        try (Connection connection = database.connection();
-             PreparedStatement statement = connection.prepareStatement(INSERT)) {
+        Connection connection = null;
+        try {
+            connection = database.connection();
             connection.setAutoCommit(false);
-            for (ScrapedRecord record : records) {
-                statement.setString(1, record.source());
-                statement.setString(2, record.url());
-                statement.setString(3, record.title());
-                statement.setString(4, record.content());
-                statement.setDouble(5, record.qualityScore());
-                statement.setString(6, mapper.writeValueAsString(record.attributes()));
-                statement.setTimestamp(7, Timestamp.from(record.scrapedAt()));
-                statement.addBatch();
+            try (PreparedStatement statement = connection.prepareStatement(INSERT)) {
+                for (ScrapedRecord record : records) {
+                    statement.setString(1, record.source());
+                    statement.setString(2, record.url());
+                    statement.setString(3, record.title());
+                    statement.setString(4, record.content());
+                    statement.setDouble(5, record.qualityScore());
+                    statement.setString(6, mapper.writeValueAsString(record.attributes()));
+                    statement.setTimestamp(7, Timestamp.from(record.scrapedAt()));
+                    statement.addBatch();
+                }
+                int[] counts = statement.executeBatch();
+                connection.commit();
+                return java.util.Arrays.stream(counts).sum();
             }
-            int[] counts = statement.executeBatch();
-            connection.commit();
-            return java.util.Arrays.stream(counts).sum();
         } catch (SQLException | JsonProcessingException e) {
+            if (connection != null) {
+                try {
+                    connection.rollback();
+                } catch (SQLException ignored) {
+                    // The original failure is the one worth reporting.
+                }
+            }
             throw new StorageException("Could not persist " + records.size() + " records", e);
+        } finally {
+            if (connection != null) {
+                try {
+                    connection.close();
+                } catch (SQLException ignored) {
+                    // Nothing useful to do at this point.
+                }
+            }
         }
     }
 

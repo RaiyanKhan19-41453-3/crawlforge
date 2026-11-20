@@ -36,7 +36,7 @@ public final class CrawlForgeApplication implements Runnable {
     @Option(names = {"--output"}, description = "Output file (.csv, .json or .xlsx)")
     private String output;
 
-    @Option(names = {"--engine"}, description = "auto, selenium, playwright or htmlunit", defaultValue = "auto")
+    @Option(names = {"--engine"}, description = "auto, selenium, htmlunit or playwright (browser binaries required)", defaultValue = "auto")
     private String engine = "auto";
 
     @Option(names = {"--demo"}, description = "Run against the built-in offline demo website")
@@ -48,11 +48,10 @@ public final class CrawlForgeApplication implements Runnable {
     @Override
     public void run() {
         ScraperConfig config = ScraperConfig.load(configPath);
-        System.setProperty("crawler.engine", engine);
         ParserRegistry registry = new ParserRegistry();
 
         try (ResilientHttpClient http = new ResilientHttpClient(config)) {
-            CrawlerFactory factory = new CrawlerFactory(config, http, registry);
+            CrawlerFactory factory = new CrawlerFactory(config, http, registry, engine);
             ScrapeEngine scrapeEngine = new ScrapeEngine(config, factory);
 
             if (demo) {

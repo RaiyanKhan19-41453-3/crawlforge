@@ -25,8 +25,8 @@ public final class SiteConfigLoader {
                     .sourceType(SourceType.valueOf(text(root, "sourceType", "HTML").toUpperCase()))
                     .baseUrl(text(root, "baseUrl", null))
                     .loginUrl(text(root, "loginUrl", null))
-                    .username(text(root, "username", null))
-                    .password(text(root, "password", null))
+                    .username(envOr("SCRAPER_SITE_USERNAME", text(root, "username", null)))
+                    .password(envOr("SCRAPER_SITE_PASSWORD", text(root, "password", null)))
                     .itemSelector(text(root, "itemSelector", null))
                     .nextPageSelector(text(root, "nextPageSelector", null))
                     .waitForSelector(text(root, "waitForSelector", null))
@@ -70,6 +70,11 @@ public final class SiteConfigLoader {
             Map.Entry<String, JsonNode> e = it.next();
             sink.accept(e.getKey(), e.getValue().asText());
         }
+    }
+
+    private static String envOr(String variable, String fallback) {
+        String value = System.getenv(variable);
+        return value == null || value.isBlank() ? fallback : value;
     }
 
     private static String text(JsonNode n, String key, String def) {

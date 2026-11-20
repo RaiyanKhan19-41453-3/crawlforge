@@ -14,7 +14,8 @@ build/
 !.vscode/extensions.json
 !.vscode/tasks.json
 .env
-output/
+output/*
+!output/.gitkeep
 logs/
 *.log
 .DS_Store
