@@ -26,6 +26,7 @@ public final class ScrapeEngine {
     public ScrapeEngine(ScraperConfig config, CrawlerFactory crawlerFactory) {
         this.config = config;
         this.crawlerFactory = crawlerFactory;
+        crawlerFactory.http().attachMetrics(metrics);
     }
 
     public EngineResult execute(ScrapeJob job) { return execute(job, null); }

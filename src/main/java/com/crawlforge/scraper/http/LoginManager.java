@@ -19,6 +19,8 @@ public final class LoginManager {
     public boolean loginIfNeeded(SiteConfig site) {
         if (!site.requiresLogin()) return false;
         log.info("Authenticating with site '{}'", site.name());
+        // Also register credentials so a Basic-auth challenge on the login URL works.
+        http.withBasicAuth(site.username(), site.password());
         Map<String, String> form = new LinkedHashMap<>();
         form.put("username", site.username());
         form.put("password", site.password());

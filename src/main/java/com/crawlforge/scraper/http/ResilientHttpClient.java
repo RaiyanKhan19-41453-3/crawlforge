@@ -7,27 +7,34 @@ import com.crawlforge.scraper.core.exception.CaptchaDetectedException;
 import com.crawlforge.scraper.core.exception.FetchException;
 import com.crawlforge.scraper.core.exception.RateLimitException;
 import com.crawlforge.scraper.core.exception.RetryExhaustedException;
+import com.crawlforge.scraper.orchestration.MetricsCollector;
 import com.crawlforge.scraper.stealth.AntiBotDetector;
 import com.crawlforge.scraper.stealth.BrowserFingerprint;
 import com.crawlforge.scraper.stealth.CaptchaSolver;
 import java.io.IOException;
 import java.net.URI;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import org.apache.hc.client5.http.classic.methods.HttpGet;
 import org.apache.hc.client5.http.classic.methods.HttpPost;
 import org.apache.hc.client5.http.config.RequestConfig;
 import org.apache.hc.client5.http.cookie.StandardCookieSpec;
 import org.apache.hc.client5.http.entity.UrlEncodedFormEntity;
+import org.apache.hc.client5.http.auth.AuthScope;
+import org.apache.hc.client5.http.auth.UsernamePasswordCredentials;
 import org.apache.hc.client5.http.impl.auth.BasicCredentialsProvider;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.hc.client5.http.impl.classic.HttpClients;
 import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManagerBuilder;
+import org.apache.hc.client5.http.protocol.HttpClientContext;
+import org.apache.hc.client5.http.protocol.RedirectLocations;
 import org.apache.hc.core5.http.Header;
 import org.apache.hc.core5.http.message.BasicNameValuePair;
-import org.apache.hc.core5.http.io.entity.EntityUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,6 +46,14 @@ import org.slf4j.LoggerFactory;
 public final class ResilientHttpClient implements AutoCloseable {
 
     private static final Logger log = LoggerFactory.getLogger(ResilientHttpClient.class);
+    private static final int MAX_BODY_BYTES = 50 * 1024 * 1024;
+    private static final Pattern CONTENT_TYPE_CHARSET =
+            Pattern.compile("(?i)charset\\s*=\\s*['\"]?([\\w.-]+)");
+    private static final Pattern META_CHARSET =
+            Pattern.compile("(?i)<meta[^>]+charset\\s*=\\s*['\"]?([\\w.-]+)");
+
+    private record RawResponse(int status, byte[] body, String contentType,
+                               String url, String finalUrl, Map<String, String> headers) { }
 
     private final ScraperConfig config;
     private final CloseableHttpClient client;
@@ -47,6 +62,7 @@ public final class ResilientHttpClient implements AutoCloseable {
     private final RetryPolicy retryPolicy;
     private final UserAgentRotator userAgents;
     private final ProxyRotator proxies;
+    private final BasicCredentialsProvider credentials = new BasicCredentialsProvider();
     private final AntiBotDetector antiBotDetector = new AntiBotDetector();
     private final CaptchaSolver captchaSolver;
     private final BrowserFingerprint fingerprint;
@@ -54,6 +70,7 @@ public final class ResilientHttpClient implements AutoCloseable {
     private final AtomicInteger totalRetries = new AtomicInteger();
     private final AtomicInteger captchaChallenges = new AtomicInteger();
     private final AtomicInteger blockedResponses = new AtomicInteger();
+    private volatile MetricsCollector metrics;
 
     public ResilientHttpClient(ScraperConfig config) {
         this(config, UserAgentRotator.DEFAULTS, CaptchaSolver.QUEUE, BrowserFingerprint.consistent());
@@ -72,7 +89,6 @@ public final class ResilientHttpClient implements AutoCloseable {
     }
 
     private CloseableHttpClient buildClient() {
-        BasicCredentialsProvider credentials = new BasicCredentialsProvider();
         proxies.applyCredentialsTo(credentials);
         return HttpClients.custom()
                 .setConnectionManager(PoolingHttpClientConnectionManagerBuilder.create()
@@ -111,6 +127,7 @@ public final class ResilientHttpClient implements AutoCloseable {
                 last = e;
                 if (!retryPolicy.shouldRetry(attempt)) break;
                 totalRetries.incrementAndGet();
+                if (metrics != null) metrics.addRetries(1);
                 log.warn("Attempt {}/{} failed for {}: {} - retrying in {}", attempt,
                         retryPolicy.maxAttempts(), url, e.getMessage(), retryPolicy.delayFor(attempt));
                 sleep(retryPolicy.delayFor(attempt).toMillis());
@@ -120,20 +137,19 @@ public final class ResilientHttpClient implements AutoCloseable {
                 + " attempts: " + url, last);
     }
 
-    /** GET a URL as text with retries, backoff and full anti-bot handling. */
+    /** GET a URL as text with retries, backoff, charset detection and anti-bot handling. */
     public HttpResponse fetch(String url) {
-        return withRetries(url, request -> validate(execute(request, url)));
+        return withRetries(url, request -> {
+            RawResponse raw = execute(request, url);
+            HttpResponse response = new HttpResponse(raw.status(), decode(raw.body(), raw.contentType()),
+                    raw.url(), raw.finalUrl(), raw.headers());
+            return validate(response);
+        });
     }
 
     /** GET a URL as raw bytes; never decodes binary formats such as PDF. */
     public BinaryResponse fetchBytes(String url) {
-        return withRetries(url, request -> new BinaryResponse(
-                client.execute(request, response -> {
-                    int status = response.getCode();
-                    if (status >= 400) throw new FetchException("HTTP " + status + " from " + url);
-                    return response.getEntity() == null
-                            ? new byte[0] : response.getEntity().getContent().readAllBytes();
-                })));
+        return withRetries(url, request -> new BinaryResponse(execute(request, url).body()));
     }
 
     /** Form POST used by login flows. */
@@ -147,7 +163,9 @@ public final class ResilientHttpClient implements AutoCloseable {
                     .map(e -> new BasicNameValuePair(e.getKey(), e.getValue()))
                     .toList();
             post.setEntity(new UrlEncodedFormEntity(pairs, StandardCharsets.UTF_8));
-            return validate(execute(post, url));
+            RawResponse raw = execute(post, url);
+            return validate(new HttpResponse(raw.status(), decode(raw.body(), raw.contentType()),
+                    raw.url(), raw.finalUrl(), raw.headers()));
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new FetchException("POST interrupted for " + url, e);
@@ -156,21 +174,43 @@ public final class ResilientHttpClient implements AutoCloseable {
         }
     }
 
-    private HttpResponse execute(org.apache.hc.client5.http.classic.methods.HttpUriRequestBase request,
-                                 String url) throws IOException {
-        return client.execute(request, response -> {
+    private RawResponse execute(org.apache.hc.client5.http.classic.methods.HttpUriRequestBase request,
+                                String url) throws IOException {
+        HttpClientContext context = HttpClientContext.create();
+        return client.execute(request, context, response -> {
             int status = response.getCode();
-            String body = response.getEntity() == null ? ""
-                    : EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8);
+            if (status == 304) throw new FetchException("HTTP 304 (not modified) from " + url);
+
             Map<String, String> headers = new LinkedHashMap<>();
             for (Header header : response.getHeaders()) headers.put(header.getName(), header.getValue());
-            return new HttpResponse(status, body, url, Map.copyOf(headers));
+            Header length = response.getHeader("Content-Length");
+            if (length != null) {
+                try {
+                    if (Long.parseLong(length.getValue()) > MAX_BODY_BYTES) {
+                        throw new FetchException("Response too large from " + url);
+                    }
+                } catch (NumberFormatException ignored) {
+                    // Ignore an invalid Content-Length; the actual byte count is checked below.
+                }
+            }
+            byte[] body = response.getEntity() == null
+                    ? new byte[0] : response.getEntity().getContent().readAllBytes();
+            if (body.length > MAX_BODY_BYTES) throw new FetchException("Response too large from " + url);
+
+            String finalUrl = url;
+            RedirectLocations redirects = context.getRedirectLocations();
+            if (redirects != null && redirects.size() > 0) {
+                finalUrl = redirects.getAll().get(redirects.size() - 1).toString();
+            }
+            return new RawResponse(status, body, response.getHeader("Content-Type") == null ? null
+                    : response.getHeader("Content-Type").getValue(), url, finalUrl, headers);
         });
     }
 
     private HttpResponse validate(HttpResponse response) {
         if (response.status() == 429) {
             blockedResponses.incrementAndGet();
+            if (metrics != null) metrics.addBlocked(1);
             throw new RateLimitException("HTTP 429 from " + response.url());
         }
         if (response.status() >= 500) {
@@ -182,6 +222,7 @@ public final class ResilientHttpClient implements AutoCloseable {
         AntiBotDetector.ThreatLevel threat = antiBotDetector.detect(response.body(), response.status());
         if (threat == AntiBotDetector.ThreatLevel.CAPTCHA) {
             captchaChallenges.incrementAndGet();
+            if (metrics != null) metrics.addCaptchas(1);
             if (captchaSolver.solve(response.url(), response.body())) {
                 throw new FetchException("CAPTCHA solved, retrying " + response.url());
             }
@@ -189,9 +230,30 @@ public final class ResilientHttpClient implements AutoCloseable {
         }
         if (threat == AntiBotDetector.ThreatLevel.BLOCKED) {
             blockedResponses.incrementAndGet();
+            if (metrics != null) metrics.addBlocked(1);
             throw new AntiBotException("Bot challenge from " + response.url());
         }
         return response;
+    }
+
+    /** Charset from Content-Type, else from an HTML meta tag in the first 2 KB, else UTF-8. */
+    public static String decode(byte[] body, String contentType) {
+        if (contentType != null) {
+            Matcher matcher = CONTENT_TYPE_CHARSET.matcher(contentType);
+            if (matcher.find()) return decodeWith(body, matcher.group(1));
+        }
+        int headLength = Math.min(body.length, 2048);
+        Matcher meta = META_CHARSET.matcher(new String(body, 0, headLength, StandardCharsets.ISO_8859_1));
+        if (meta.find()) return decodeWith(body, meta.group(1));
+        return new String(body, StandardCharsets.UTF_8);
+    }
+
+    private static String decodeWith(byte[] body, String charset) {
+        try {
+            return new String(body, Charset.forName(charset));
+        } catch (Exception e) {
+            return new String(body, StandardCharsets.UTF_8);
+        }
     }
 
     private RequestConfig requestConfig() {
@@ -229,6 +291,16 @@ public final class ResilientHttpClient implements AutoCloseable {
     public int totalRetries() { return totalRetries.get(); }
     public int captchaChallenges() { return captchaChallenges.get(); }
     public int blockedResponses() { return blockedResponses.get(); }
+
+    /** Registers credentials for an HTTP Basic-auth protected site. Values are never logged. */
+    public void withBasicAuth(String username, String password) {
+        if (username == null || password == null) return;
+        credentials.setCredentials(new AuthScope(null, -1),
+                new UsernamePasswordCredentials(username, password.toCharArray()));
+    }
+
+    /** Connects transport counters to the run report so retries/captchas/blocks are visible. */
+    public void attachMetrics(MetricsCollector metrics) { this.metrics = metrics; }
 
     @Override
     public void close() throws IOException {

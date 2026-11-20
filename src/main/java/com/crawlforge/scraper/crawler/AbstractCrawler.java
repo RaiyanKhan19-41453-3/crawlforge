@@ -40,10 +40,15 @@ public abstract class AbstractCrawler implements Crawler {
                 if (url == null) break;
                 int depth = context.depthOf(url);
                 if (depth > job.maxDepth()) continue;
+                if (!com.crawlforge.scraper.stealth.RobotsTxtChecker.INSTANCE.allowed(url)) {
+                    log.debug("Skipping {} - disallowed by robots.txt", url);
+                    continue;
+                }
                 if (!context.tryReservePage()) break;
 
                 try {
                     String raw = fetchRaw(url, job);
+                    String pageUrl = resolvedPageUrl(url, job);
                     if (raw == null || raw.isBlank()) {
                         context.recordFailure();
                         context.recordPage(0);
@@ -55,7 +60,7 @@ public abstract class AbstractCrawler implements Crawler {
                     List<ScrapedRecord> records = DataValidator.filter(parserRegistry.parse(raw, site))
                             .stream()
                             .map(record -> record.url() == null || record.url().isBlank()
-                                    || record.url().equals(site.baseUrl()) ? record.withUrl(url) : record)
+                                    || record.url().equals(site.baseUrl()) ? record.withUrl(pageUrl) : record)
                             .toList();
                     results.addAll(records);
                     context.recordPage(records.size());
@@ -64,7 +69,7 @@ public abstract class AbstractCrawler implements Crawler {
                     log.debug("Crawled {} -> {} records", url, records.size());
 
                     if (site.followLinks() && depth < job.maxDepth()) {
-                        discoverLinks(raw, job, url).forEach(link -> context.enqueue(link, depth + 1));
+                        discoverLinks(raw, job, pageUrl).forEach(link -> context.enqueue(link, depth + 1));
                     }
                 } catch (ScraperException e) {
                     log.error("[{}] {} at {}: {}", e.errorCode(), e.getMessage(), url, e.toString());
@@ -96,6 +101,9 @@ public abstract class AbstractCrawler implements Crawler {
 
     /** Binary-safe fetch hook; overrides handle formats such as PDF. */
     protected String fetchRaw(String url, ScrapeJob job) { return fetchPage(url, job); }
+
+    /** URL after redirects, used as the base for relative links and record provenance. */
+    protected String resolvedPageUrl(String requestedUrl, ScrapeJob job) { return requestedUrl; }
 
     /** Hook for engines that discover links differently (for example by clicking Next). */
     protected List<String> discoverLinks(String raw, ScrapeJob job, String pageUrl) {

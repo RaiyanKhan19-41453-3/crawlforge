@@ -9,7 +9,7 @@ public record EngineResult(List<ScrapedRecord> records, Map<String, Long> metric
 
     public EngineResult {
         records = List.copyOf(records);
-        metrics = Map.copyOf(metrics);
+        metrics = java.util.Collections.unmodifiableMap(new java.util.LinkedHashMap<>(metrics));
     }
 
     @Override

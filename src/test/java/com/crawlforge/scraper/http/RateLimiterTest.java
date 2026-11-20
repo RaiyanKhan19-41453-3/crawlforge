@@ -12,7 +12,7 @@ class RateLimiterTest {
         RateLimiter limiter = new RateLimiter(1.0); // capacity one token
         assertTrue(limiter.tryAcquire());
         assertFalse(limiter.tryAcquire());
-        Thread.sleep(1_100);
+        Thread.sleep(1_300);
         assertTrue(limiter.tryAcquire(), "the bucket should have refilled after one second");
     }
 

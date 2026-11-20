@@ -55,7 +55,10 @@ writer. This separation is what makes the code maintainable and easy for a team 
 - **Jsoup** for fast CSS-selector parsing; **W3C DOM + XPath** for real XPath support on both
   HTML and XML (so XPath knowledge is demonstrated, not hidden behind a library).
 - **HttpClient 5** with a pooled connection manager; automatic retries disabled because
-  `ResilientHttpClient` owns the retry/backoff policy.
+  `ResilientHttpClient` owns the retry/backoff policy. It tracks final URLs after redirects,
+  decodes text using `Content-Type` or an HTML `<meta charset>`, caps response bodies at
+  50 MB, supports HTTP Basic credentials, and skips paths disallowed by `robots.txt` (the
+  common `User-agent: *` / `Disallow` rules).
 - **PDFBox 3**, **Apache POI**, **Commons CSV**, **Jackson** for the non-HTML formats.
 - **H2** only in test scope so SQL code is verified in CI without a database service.
 - **Playwright driver-bundle** excluded from the default jar; enable with `-Pplaywright-runtime`

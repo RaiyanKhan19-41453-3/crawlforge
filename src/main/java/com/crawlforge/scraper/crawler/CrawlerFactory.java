@@ -55,4 +55,5 @@ public final class CrawlerFactory {
     }
 
     public PaginationHandler pagination() { return pagination; }
+    public ResilientHttpClient http() { return http; }
 }

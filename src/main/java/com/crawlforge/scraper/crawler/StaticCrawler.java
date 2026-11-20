@@ -13,6 +13,7 @@ public final class StaticCrawler extends AbstractCrawler {
 
     private final ResilientHttpClient http;
     private final LoginManager loginManager;
+    private volatile String lastFinalUrl;
 
     public StaticCrawler(ResilientHttpClient http, ParserRegistry registry,
                          PaginationHandler pagination) {
@@ -32,7 +33,7 @@ public final class StaticCrawler extends AbstractCrawler {
     @Override
     protected String fetchPage(String url, ScrapeJob job) {
         HttpResponse response = http.fetch(url);
-        // Parse links against the URL actually requested (may differ after redirects).
+        lastFinalUrl = response.effectiveUrl();
         return response.body();
     }
 
@@ -40,9 +41,15 @@ public final class StaticCrawler extends AbstractCrawler {
     protected String fetchRaw(String url, ScrapeJob job) {
         if (job.site().sourceType() == com.crawlforge.scraper.core.model.SourceType.PDF) {
             // ISO-8859-1 is a lossless byte-to-char transport for the PDFBox parser.
+            lastFinalUrl = url;
             return new String(http.fetchBytes(url).body(), java.nio.charset.StandardCharsets.ISO_8859_1);
         }
         return super.fetchRaw(url, job);
+    }
+
+    @Override
+    protected String resolvedPageUrl(String requestedUrl, ScrapeJob job) {
+        return lastFinalUrl == null ? requestedUrl : lastFinalUrl;
     }
 
     @Override
