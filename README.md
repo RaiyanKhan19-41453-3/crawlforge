@@ -6,6 +6,8 @@
 > engine: Java, Groovy, browser automation, anti-bot handling, data quality, SQL,
 > Docker deployment and AI-assisted development.
 > See [`REQUIREMENTS_MATRIX.md`](REQUIREMENTS_MATRIX.md) for a capability-to-code mapping.
+For a real end-to-end example on a Laravel site, see
+[`docs/REAL_SITE_WALKTHROUGH.md`](docs/REAL_SITE_WALKTHROUGH.md).
 
 [![CI](https://github.com/RaiyanKhan19-41453-3/crawlforge/actions/workflows/ci.yml/badge.svg)](https://github.com/RaiyanKhan19-41453-3/crawlforge/actions/workflows/ci.yml)
 
