@@ -75,7 +75,10 @@ public abstract class AbstractCrawler implements Crawler {
                     job.recordRecords(records.size());
                     log.debug("Crawled {} -> {} records", url, records.size());
 
-                    if (site.followLinks() && depth < job.maxDepth()) {
+                    // HtmlParser.links() always includes the configured next-page link and
+                    // adds general anchors only when followLinks is true, so honouring the
+                    // next selector must not be gated behind followLinks.
+                    if (depth < job.maxDepth()) {
                         discoverLinks(raw, job, pageUrl).forEach(link -> context.enqueue(link, depth + 1));
                     }
                 } catch (ScraperException e) {

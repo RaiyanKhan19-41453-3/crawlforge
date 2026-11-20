@@ -1,0 +1,23 @@
+{
+  "name": "codemarkeet-store",
+  "sourceType": "HTML",
+  "baseUrl": "https://codemarkeet.com",
+  "seedUrls": ["https://codemarkeet.com/store"],
+  "itemSelector": ".product-card",
+  "nextPageSelector": "a[rel='next']",
+  "fields": {
+    "title": "h3",
+    "description": "p.line-clamp-2",
+    "price": "span.text-xl",
+    "oldPrice": "span.line-through",
+    "discount": "span.bg-rose-600",
+    "category": "attr:data-categories"
+  },
+  "xpathFields": {
+    "url": ".//a[contains(@href, '/product/')]/@href"
+  },
+  "maxPages": 3,
+  "maxDepth": 5,
+  "followLinks": false,
+  "javascriptRequired": false
+}
