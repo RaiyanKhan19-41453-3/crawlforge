@@ -30,7 +30,8 @@ public final class ScrapeEngine {
 
     public EngineResult execute(ScrapeJob job) { return execute(job, null); }
 
-    public EngineResult execute(ScrapeJob job, String outputTarget) {
+    /** Synchronized so a scheduler cannot run two crawls concurrently on the same client. */
+    public synchronized EngineResult execute(ScrapeJob job, String outputTarget) {
         long started = System.currentTimeMillis();
         // One fresh collector per run; otherwise a reused engine reports cumulative figures.
         MetricsCollector runMetrics = new MetricsCollector();

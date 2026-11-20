@@ -26,8 +26,10 @@ public final class CrawlContext {
     public boolean enqueue(String url, int depth) {
         if (url == null || url.isBlank() || visited.contains(url)) return false;
         if (visited.add(url)) {
-            frontier.add(url);
+            // Publish the depth before the URL: with a shared frontier another worker may
+            // poll immediately after frontier.add() and needs to see the correct depth.
             depths.put(url, depth);
+            frontier.add(url);
             return true;
         }
         return false;
