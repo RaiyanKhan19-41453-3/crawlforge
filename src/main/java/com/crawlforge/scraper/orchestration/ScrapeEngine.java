@@ -21,18 +21,21 @@ public final class ScrapeEngine {
     private static final Logger log = LoggerFactory.getLogger(ScrapeEngine.class);
     private final ScraperConfig config;
     private final CrawlerFactory crawlerFactory;
-    private final MetricsCollector metrics = new MetricsCollector();
+    private volatile MetricsCollector metrics;
 
     public ScrapeEngine(ScraperConfig config, CrawlerFactory crawlerFactory) {
         this.config = config;
         this.crawlerFactory = crawlerFactory;
-        crawlerFactory.http().attachMetrics(metrics);
     }
 
     public EngineResult execute(ScrapeJob job) { return execute(job, null); }
 
     public EngineResult execute(ScrapeJob job, String outputTarget) {
         long started = System.currentTimeMillis();
+        // One fresh collector per run; otherwise a reused engine reports cumulative figures.
+        MetricsCollector runMetrics = new MetricsCollector();
+        this.metrics = runMetrics;
+        crawlerFactory.http().attachMetrics(runMetrics);
         job.markRunning();
         crawlerFactory.http().resetAuthentication();
         // Duplicate seeds would otherwise create duplicate rows and corrupt a client feed.
@@ -58,8 +61,8 @@ public final class ScrapeEngine {
                 CrawlContext context = new CrawlContext(pageBudget);
                 List<ScrapedRecord> records = crawler.crawl(subJob, context);
                 job.aggregate(context.pages(), records.size(), context.failures());
-                metrics.addPages(context.pages());
-                metrics.addFailures(context.failures());
+                runMetrics.addPages(context.pages());
+                runMetrics.addFailures(context.failures());
                 return records;
             }));
         }
@@ -69,12 +72,12 @@ public final class ScrapeEngine {
             try {
                 List<ScrapedRecord> records = future.get(5, TimeUnit.MINUTES);
                 all.addAll(records);
-                metrics.addRecords(records.size());
+                runMetrics.addRecords(records.size());
             } catch (Exception e) {
                 log.error("Worker failed: {}", e.getMessage());
                 future.cancel(true);
                 job.aggregate(0, 0, 1);
-                metrics.addFailures(1);
+                runMetrics.addFailures(1);
             }
         }
         WorkerPoolExecutor.shutdown(pool, 30);
@@ -90,7 +93,7 @@ public final class ScrapeEngine {
         } finally {
             job.finish();
         }
-        return new EngineResult(all, metrics.snapshot(), System.currentTimeMillis() - started);
+        return new EngineResult(all, runMetrics.snapshot(), System.currentTimeMillis() - started);
     }
 
     public MetricsCollector metrics() { return metrics; }

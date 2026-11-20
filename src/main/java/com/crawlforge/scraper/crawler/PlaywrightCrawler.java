@@ -35,9 +35,12 @@ public final class PlaywrightCrawler extends AbstractCrawler {
     @Override
     protected void beforeCrawl(ScrapeJob job, CrawlContext context) {
         playwright = Playwright.create();
+        java.util.List<String> args = config.headless()
+                ? fingerprint.chromeArguments()
+                : java.util.List.of("--no-sandbox", "--disable-dev-shm-usage", "--window-size=1920,1080");
         browser = playwright.chromium().launch(new BrowserType.LaunchOptions()
                 .setHeadless(config.headless())
-                .setArgs(fingerprint.chromeArguments()));
+                .setArgs(args));
     }
 
     @Override

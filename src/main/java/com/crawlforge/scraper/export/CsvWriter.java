@@ -18,6 +18,16 @@ public final class CsvWriter implements DataWriter {
 
     @Override public String extension() { return "csv"; }
 
+    private static void writeEmpty(String target) {
+        try {
+            Path path = Path.of(target);
+            if (path.getParent() != null) Files.createDirectories(path.getParent());
+            Files.writeString(path, "");
+        } catch (IOException e) {
+            throw new StorageException("Could not write empty CSV to " + target, e);
+        }
+    }
+
     /** Prevent spreadsheet formula injection from scraped values. */
     private static String safe(String value) {
         return value.matches("^[=+\\-@].*") ? "'" + value : value;
@@ -25,6 +35,10 @@ public final class CsvWriter implements DataWriter {
 
     @Override
     public void write(List<ScrapedRecord> records, String target) {
+        if (records.isEmpty()) {
+            writeEmpty(target);
+            return;
+        }
         Set<String> headers = new LinkedHashSet<>();
         records.forEach(record -> headers.addAll(record.toMap().keySet()));
         String[] headerArray = headers.toArray(String[]::new);

@@ -72,7 +72,7 @@ public final class PaymentwallPayloadParser {
             Mac mac = Mac.getInstance("HmacSHA256");
             mac.init(new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), "HmacSHA256"));
             String expected = HexFormat.of().formatHex(mac.doFinal(payload.getBytes(StandardCharsets.UTF_8)));
-            String supplied = signature == null ? "" : signature.toLowerCase(Locale.ROOT);
+            String supplied = signature == null ? "" : signature.trim().toLowerCase(Locale.ROOT);
             if (!MessageDigest.isEqual(expected.getBytes(StandardCharsets.UTF_8),
                     supplied.getBytes(StandardCharsets.UTF_8))) {
                 throw new ScraperException("SIGNATURE_ERROR", "Merchant webhook signature mismatch");
