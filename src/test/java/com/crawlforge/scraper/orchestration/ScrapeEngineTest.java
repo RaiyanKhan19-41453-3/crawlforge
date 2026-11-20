@@ -105,4 +105,31 @@ class ScrapeEngineTest {
             }
         }
     }
+
+    @Test
+    void duplicateSeedsDoNotDuplicateRecords() throws Exception {
+        try (LocalServer server = LocalServer.start()) {
+            server.route("/page/", exchange -> LocalServer.respond(exchange, 200,
+                    "<div class='product'><h2 class='title'>Only once</h2></div>"));
+
+            Path properties = Files.createTempFile("crawlforge-dupes", ".properties");
+            Files.writeString(properties, "scraper.retry.attempts=1\nscraper.rate.requestsPerSecond=1000\n");
+            ScraperConfig config = ScraperConfig.load(properties);
+
+            String page = server.url("/page/1");
+            SiteConfig site = SiteConfig.builder().name("dupes")
+                    .sourceType(SourceType.HTML).baseUrl(server.url(""))
+                    .seedUrl(page).seedUrl(page)
+                    .itemSelector(".product").field("title", "h2.title")
+                    .followLinks(false).maxPages(4).build();
+
+            try (ResilientHttpClient http = new ResilientHttpClient(config)) {
+                ScrapeEngine engine = new ScrapeEngine(config,
+                        new CrawlerFactory(config, http, new ParserRegistry()));
+                EngineResult result = engine.execute(
+                        ScrapeJob.builder().name("dupe-test").site(site).build());
+                assertEquals(1, result.records().size());
+            }
+        }
+    }
 }

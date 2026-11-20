@@ -13,7 +13,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-/** Parses JSON APIs and embedded JSON payloads using Jackson JsonPointer paths. */
+/** Parses JSON APIs and embedded JSON payloads using simple dotted paths with array indices. */
 public final class JsonParser implements Parser {
 
     private final ObjectMapper mapper = new ObjectMapper();
@@ -75,7 +75,8 @@ public final class JsonParser implements Parser {
     private static JsonNode resolvePath(JsonNode root, String path) {
         if (path == null || path.isBlank() || "$".equals(path)) return root;
         String clean = path.replaceFirst("^\\$", "").replaceFirst("^\\.", "");
-        return root.at("/" + clean.replace('.', '/'));
+        clean = clean.replaceAll("\\[(\\d+)\\]", "/$1").replace('.', '/');
+        return root.at("/" + clean);
     }
 
     private static String text(JsonNode node) {

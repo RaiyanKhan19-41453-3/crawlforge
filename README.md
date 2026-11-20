@@ -61,7 +61,7 @@ docker run --rm --user "$(id -u):$(id -g)" \
 | **AI-driven development** | `CLAUDE.md`, `AGENTS.md`, real prompt library in `docs/AI_ASSISTED_WORKFLOW.md` |
 | **DevOps** | Dockerfile, docker-compose, GitHub Actions CI, JIRA/PR/issue templates |
 | **Cross-platform / IDEs** | `.vscode/`, `.idea/`, `scripts/*.sh` and `scripts/*.bat` |
-| **Data quality** | Per-record quality score, validator gate, 57 automated tests |
+| **Data quality** | Per-record quality score, validator gate, 68 automated tests |
 
 ---
 
@@ -136,4 +136,4 @@ scripts/           Docker-only build/run wrappers for Linux and Windows
   without them. Use `HtmlUnitCrawler` (no browser needed), or enable `-Pplaywright-runtime`
   and install Chromium when building a browser-enabled image.
 - The built-in demo server exists so the full pipeline can be verified without a live site.
-- Core behaviour is covered by 57 automated tests; run `./scripts/build.sh` to verify.
+- Core behaviour is covered by 68 automated tests; run `./scripts/build.sh` to verify.

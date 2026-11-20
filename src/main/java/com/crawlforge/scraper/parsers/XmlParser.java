@@ -29,7 +29,11 @@ public final class XmlParser implements Parser {
             DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
             factory.setNamespaceAware(false);
             factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
-            Document doc = factory.newDocumentBuilder().parse(new InputSource(new StringReader(raw)));
+            // Namespace prefixes are stripped so recipes can use simple XPath names such as
+            // //item even when the client feed uses <x:item>.
+            String normalized = raw.replaceAll("\\s+xmlns(?::[\\w.-]+)?\\s*=\\s*(['\"])[^'\"]*\\1", "")
+                    .replaceAll("<(/?)(\\w+):", "<$1");
+            Document doc = factory.newDocumentBuilder().parse(new InputSource(new StringReader(normalized)));
             String itemExpression = site.itemSelector() == null ? "//item" : site.itemSelector();
             NodeList items = (NodeList) XPathFactory.newInstance().newXPath()
                     .evaluate(itemExpression, doc, XPathConstants.NODESET);

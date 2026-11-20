@@ -33,14 +33,16 @@ public final class ScrapeEngine {
     public EngineResult execute(ScrapeJob job, String outputTarget) {
         long started = System.currentTimeMillis();
         job.markRunning();
-        int seedCount = Math.max(1, job.seedUrls().size());
+        // Duplicate seeds would otherwise create duplicate rows and corrupt a client feed.
+        List<String> seeds = job.seedUrls().stream().distinct().toList();
+        int seedCount = Math.max(1, seeds.size());
         ExecutorService pool = WorkerPoolExecutor.newPool(Math.min(config.maxThreads(), seedCount));
         List<Future<List<ScrapedRecord>>> futures = new ArrayList<>();
         // One shared budget across all seeds: maxPages is a total, not a per-seed allowance.
         java.util.concurrent.atomic.AtomicInteger pageBudget = new java.util.concurrent.atomic.AtomicInteger(job.maxPages());
 
-        for (int i = 0; i < job.seedUrls().size(); i++) {
-            final String seed = job.seedUrls().get(i);
+        for (int i = 0; i < seeds.size(); i++) {
+            final String seed = seeds.get(i);
             ScrapeJob subJob = ScrapeJob.builder()
                     .id(job.id() + "-" + i)
                     .name(job.name() + " [" + seed + "]")

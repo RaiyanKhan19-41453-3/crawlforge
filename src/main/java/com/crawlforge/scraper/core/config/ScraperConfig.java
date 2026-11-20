@@ -3,6 +3,8 @@ package com.crawlforge.scraper.core.config;
 import com.crawlforge.scraper.core.exception.ConfigurationException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.StringReader;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -57,7 +59,9 @@ public final class ScraperConfig {
         }
         try {
             if (path != null) {
-                try (InputStream in = Files.newInputStream(path)) { props.load(in); }
+                String content = Files.readString(path, StandardCharsets.UTF_8);
+                if (!content.isEmpty() && content.charAt(0) == '\uFEFF') content = content.substring(1);
+                props.load(new StringReader(content));
             } else {
                 try (InputStream in = ScraperConfig.class.getClassLoader().getResourceAsStream("application.properties")) {
                     if (in != null) props.load(in);

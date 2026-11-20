@@ -26,7 +26,9 @@ public final class DataNormalizer {
     public static String truncate(String value, int maxLength) {
         if (maxLength <= 1) return "";
         String safe = normalize(value);
-        return safe.length() <= maxLength ? safe : safe.substring(0, maxLength - 1) + "…";
+        if (safe.codePointCount(0, safe.length()) <= maxLength) return safe;
+        int end = safe.offsetByCodePoints(0, maxLength - 1);
+        return safe.substring(0, end) + "…";
     }
 
     public static String numeric(String value) {

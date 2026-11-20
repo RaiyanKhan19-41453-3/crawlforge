@@ -81,9 +81,10 @@ public final class HtmlParser implements Parser {
     }
 
     private static void addIfUseful(List<String> links, String url) {
-        if (url != null && url.startsWith("http") && !links.contains(url) && !url.contains("#")) {
-            links.add(url);
-        }
+        if (url == null || !url.startsWith("http")) return;
+        int fragment = url.indexOf('#');
+        if (fragment >= 0) url = url.substring(0, fragment);
+        if (!url.isBlank() && !links.contains(url)) links.add(url);
     }
 
     private static String extract(Element item, String selector) {

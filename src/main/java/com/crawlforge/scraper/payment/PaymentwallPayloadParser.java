@@ -30,6 +30,9 @@ public final class PaymentwallPayloadParser {
                 throw new ScraperException("PAYLOAD_ERROR", "Merchant payload has no transactions");
             }
             JsonNode items = root.path("transactions");
+            if (!items.isArray()) {
+                throw new ScraperException("PAYLOAD_ERROR", "Merchant 'transactions' must be an array");
+            }
             List<MerchantTransaction> transactions = new ArrayList<>();
             for (JsonNode node : items) {
                 String pan = node.path("card_number").asText("");

@@ -31,6 +31,7 @@ public final class SiteConfig {
     private final int maxDepth;
     private final boolean followLinks;
     private final boolean javascriptRequired;
+    private final boolean csvHasHeader;
 
     private SiteConfig(Builder b) {
         this.name = Objects.requireNonNullElse(b.name, "unnamed-site");
@@ -51,6 +52,7 @@ public final class SiteConfig {
         this.maxDepth = b.maxDepth;
         this.followLinks = b.followLinks;
         this.javascriptRequired = b.javascriptRequired;
+        this.csvHasHeader = b.csvHasHeader;
     }
 
     public static Builder builder() { return new Builder(); }
@@ -73,6 +75,7 @@ public final class SiteConfig {
     public int maxDepth() { return maxDepth; }
     public boolean followLinks() { return followLinks; }
     public boolean javascriptRequired() { return javascriptRequired; }
+    public boolean csvHasHeader() { return csvHasHeader; }
     public boolean requiresLogin() { return loginUrl != null && username != null; }
 
     @Override
@@ -97,6 +100,7 @@ public final class SiteConfig {
         private int maxDepth = 3;
         private boolean followLinks = true;
         private boolean javascriptRequired;
+        private boolean csvHasHeader = true;
 
         public Builder name(String name) { this.name = name; return this; }
         public Builder sourceType(SourceType t) { this.sourceType = t; return this; }
@@ -117,6 +121,7 @@ public final class SiteConfig {
         public Builder maxDepth(int maxDepth) { this.maxDepth = maxDepth; return this; }
         public Builder followLinks(boolean follow) { this.followLinks = follow; return this; }
         public Builder javascriptRequired(boolean js) { this.javascriptRequired = js; return this; }
+        public Builder csvHasHeader(boolean value) { this.csvHasHeader = value; return this; }
         public SiteConfig build() { return new SiteConfig(this); }
     }
 }

@@ -7,7 +7,7 @@ Every output row is a `ScrapedRecord` with:
 | `source` | string | yes | Name of the site recipe (`config/sites/*.json`) |
 | `url` | string | yes | Absolute source URL (or `csv://row/n`, `pdf://page/n`) |
 | `title` | string | no | Short label extracted from the item |
-| `content` | string | no | Main extracted text, truncated to 10,000 chars |
+| `content` | string | no | Main extracted text; HTML/JSON/XML/CSV truncate at 10,000 chars, PDF page text is kept whole |
 | `attributes` | map | yes | Field-name → value, driven by the recipe's `fields` / `xpathFields` |
 | `qualityScore` | 0.0–1.0 | yes | Computed by `DataValidator.score()` |
 | `scrapedAt` | ISO-8601 instant | yes | Time of extraction |
@@ -25,6 +25,14 @@ Every output row is a `ScrapedRecord` with:
 - JSON — `{ generatedBy, count, records: [...] }` envelope (`JsonWriter`).
 - XLSX — one sheet, auto-sized columns (`ExcelWriter`).
 - SQL — `scraped_records` table, batched insert in one transaction (`RecordRepository`).
+
+## Source-specific recipe options
+
+- `csvHasHeader` (default `true`): set to `false` for headerless feeds. Map `fields` to
+  zero-based column indexes such as `"0"` and `"1"`; columns are also exposed as `col_1`, `col_2`, …
+- `jsonResultPath`: dotted path with optional array indices, for example `$.items` or
+  `$.items[0]`.
+- `xpathFields`: XPath expressions evaluated against each selected item.
 
 ## Changing the contract
 

@@ -124,9 +124,8 @@ public final class CrawlForgeApplication implements Runnable {
         System.out.println("Elapsed: " + result.elapsedMs() + " ms");
         System.out.println("Metrics: " + result.metrics());
         System.out.println("Output:  " + target);
-        long pages = result.metrics().getOrDefault("pages", 0L);
-        long failures = result.metrics().getOrDefault("failures", 0L);
-        System.out.println("Health:  " + (pages == 0 || failures * 2 < pages ? "OK" : "DEGRADED"));
+        System.out.println("Health:  " + com.crawlforge.scraper.observability.HealthIndicator
+                .check(result.metrics()).status());
     }
 
     public static void main(String[] args) {

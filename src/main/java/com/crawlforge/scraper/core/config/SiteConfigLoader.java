@@ -20,6 +20,9 @@ public final class SiteConfigLoader {
     public SiteConfig load(Path file) {
         try {
             JsonNode root = mapper.readTree(Files.readAllBytes(file));
+            if (root == null || !root.isObject()) {
+                throw new ConfigurationException("Site recipe must be a JSON object: " + file);
+            }
             SiteConfig.Builder b = SiteConfig.builder()
                     .name(text(root, "name", file.getFileName().toString()))
                     .sourceType(SourceType.valueOf(text(root, "sourceType", "HTML").toUpperCase()))
@@ -35,7 +38,8 @@ public final class SiteConfigLoader {
                     .maxPages(intValue(root, "maxPages", 50))
                     .maxDepth(intValue(root, "maxDepth", 3))
                     .followLinks(bool(root, "followLinks", true))
-                    .javascriptRequired(bool(root, "javascriptRequired", false));
+                    .javascriptRequired(bool(root, "javascriptRequired", false))
+                    .csvHasHeader(bool(root, "csvHasHeader", true));
 
             JsonNode seeds = root.get("seedUrls");
             if (seeds != null && seeds.isArray()) seeds.forEach(s -> b.seedUrl(s.asText()));
@@ -64,7 +68,8 @@ public final class SiteConfigLoader {
     }
 
     private void addMap(JsonNode node, java.util.function.BiConsumer<String, String> sink) {
-        if (node == null || !node.isObject()) return;
+        if (node == null) return;
+        if (!node.isObject()) throw new ConfigurationException("Field mappings must be JSON objects");
         Iterator<Map.Entry<String, JsonNode>> it = node.fields();
         while (it.hasNext()) {
             Map.Entry<String, JsonNode> e = it.next();
