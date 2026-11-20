@@ -18,6 +18,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -72,6 +73,7 @@ public final class ResilientHttpClient implements AutoCloseable {
     private final AtomicInteger captchaChallenges = new AtomicInteger();
     private final AtomicInteger blockedResponses = new AtomicInteger();
     private volatile MetricsCollector metrics;
+    private final AtomicBoolean authenticated = new AtomicBoolean();
 
     public ResilientHttpClient(ScraperConfig config) {
         this(config, UserAgentRotator.DEFAULTS, CaptchaSolver.QUEUE, BrowserFingerprint.consistent());
@@ -150,7 +152,22 @@ public final class ResilientHttpClient implements AutoCloseable {
 
     /** GET a URL as raw bytes; never decodes binary formats such as PDF. */
     public BinaryResponse fetchBytes(String url) {
-        return withRetries(url, request -> new BinaryResponse(execute(request, url).body()));
+        return withRetries(url, request -> {
+            RawResponse raw = execute(request, url);
+            validateBinaryStatus(raw, url);
+            return new BinaryResponse(raw.body());
+        });
+    }
+
+    private void validateBinaryStatus(RawResponse raw, String url) {
+        if (raw.status() == 429 || raw.status() >= 500) {
+            blockedResponses.incrementAndGet();
+            if (raw.status() == 429 && metrics != null) metrics.addBlocked(1);
+            throw new FetchException("HTTP " + raw.status() + " from " + url);
+        }
+        if (raw.status() >= 400) {
+            throw new NonRetryableFetchException("HTTP " + raw.status() + " from " + url);
+        }
     }
 
     /** Form POST used by login flows. */
@@ -305,12 +322,20 @@ public final class ResilientHttpClient implements AutoCloseable {
         if (siteUrl == null || username == null || password == null) return;
         try {
             URI uri = URI.create(siteUrl);
+            if (uri.getHost() == null) {
+                log.warn("Refusing to register Basic-auth credentials for a relative URL: {}", siteUrl);
+                return;
+            }
             credentials.setCredentials(new AuthScope(uri.getHost(), uri.getPort()),
                     new UsernamePasswordCredentials(username, password.toCharArray()));
         } catch (IllegalArgumentException e) {
             log.warn("Could not scope Basic-auth credentials to {}: {}", siteUrl, e.getMessage());
         }
     }
+
+    /** Shared flag so parallel workers log in only once per run. */
+    public boolean isAuthenticated() { return authenticated.get(); }
+    public void markAuthenticated() { authenticated.set(true); }
 
     /** Connects transport counters to the run report so retries/captchas/blocks are visible. */
     public void attachMetrics(MetricsCollector metrics) { this.metrics = metrics; }

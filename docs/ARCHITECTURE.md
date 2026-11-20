@@ -10,7 +10,7 @@ writer. This separation is what makes the code maintainable and easy for a team 
 | --- | --- | --- |
 | `core.model` | Immutable domain objects | `ScrapedRecord`, `ScrapeJob`, `SourceType`, `JobStatus` |
 | `core.config` | Configuration and declarative site recipes | `ScraperConfig`, `SiteConfig`, `SiteConfigLoader`, `RetryPolicy` |
-| `core.exception` | Typed failures with stable error codes | `ScraperException` + 8 subclasses |
+| `core.exception` | Typed failures with stable error codes | `ScraperException` + 9 subclasses |
 | `http` | All network I/O, sessions, rate limiting, rotation | `ResilientHttpClient`, `CookieJar`, `LoginManager`, `RateLimiter`, `ProxyRotator` |
 | `stealth` | Anti-bot classification and browser profile | `AntiBotDetector`, `CaptchaSolver`, `BrowserFingerprint` |
 | `parsers` | Format-specific extraction and data cleaning | `HtmlParser`, `JsonParser`, `XmlParser`, `CsvParser`, `PdfParser`, `XPathSelector`, `DataValidator` |

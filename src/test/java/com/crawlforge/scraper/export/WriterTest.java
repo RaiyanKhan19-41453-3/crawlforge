@@ -49,6 +49,23 @@ class WriterTest {
     }
 
     @Test
+    void writersHandleQuotesNewlinesAndEmoji() throws Exception {
+        List<ScrapedRecord> special = List.of(
+                ScrapedRecord.builder().source("demo").url("http://demo/1")
+                        .title("A \"quoted\" title, with newline\nand 😀")
+                        .content("line one\nline two").attribute("note", "comma, semicolon; tab\tend")
+                        .build());
+        for (String extension : List.of("csv", "json", "xlsx")) {
+            Path target = tempDir.resolve("special." + extension);
+            WriterFactory.forTarget(target.toString()).write(special, target.toString());
+            assertTrue(Files.size(target) > 0, extension + " file should not be empty");
+        }
+        String json = Files.readString(tempDir.resolve("special.json"));
+        assertTrue(json.contains("😀") || json.contains("\\uD83D\\uDE00"));
+        assertTrue(json.contains("line one\\nline two"));
+    }
+
+    @Test
     void factorySelectsWriterByExtension() {
         assertTrue(WriterFactory.forTarget("a.csv") instanceof CsvWriter);
         assertTrue(WriterFactory.forTarget("a.json") instanceof JsonWriter);

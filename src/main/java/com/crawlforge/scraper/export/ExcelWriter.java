@@ -17,6 +17,11 @@ public final class ExcelWriter implements DataWriter {
 
     @Override public String extension() { return "xlsx"; }
 
+    /** Apache POI limits a cell to 32,767 characters. */
+    private static String cellValue(String value) {
+        return value.length() <= 32_767 ? value : value.substring(0, 32_767);
+    }
+
     @Override
     public void write(List<ScrapedRecord> records, String target) {
         Set<String> headers = new LinkedHashSet<>();
@@ -31,7 +36,7 @@ public final class ExcelWriter implements DataWriter {
                 Row row = sheet.createRow(rowIndex++);
                 var map = record.toMap();
                 for (int i = 0; i < columns.length; i++) {
-                    row.createCell(i).setCellValue(map.getOrDefault(columns[i], ""));
+                    row.createCell(i).setCellValue(cellValue(map.getOrDefault(columns[i], "")));
                 }
             }
             for (int i = 0; i < columns.length; i++) sheet.autoSizeColumn(i);

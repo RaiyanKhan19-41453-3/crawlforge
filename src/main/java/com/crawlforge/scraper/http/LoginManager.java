@@ -22,24 +22,30 @@ public final class LoginManager {
      * @return true when a form login was required and succeeded
      */
     public boolean loginIfNeeded(SiteConfig site) {
-        if (site.username() != null && site.password() != null) {
-            String scope = site.loginUrl() != null ? site.loginUrl() : site.baseUrl();
-            http.withBasicAuth(scope, site.username(), site.password());
+        // The HTTP client and its cookie jar are shared by all workers in a job, so perform
+        // the login exactly once under the client's monitor.
+        synchronized (http) {
+            if (http.isAuthenticated()) return false;
+            if (site.username() != null && site.password() != null) {
+                String scope = site.loginUrl() != null ? site.loginUrl() : site.baseUrl();
+                http.withBasicAuth(scope, site.username(), site.password());
+            }
+            if (!site.requiresLogin()) return false;
+            log.info("Authenticating with site '{}'", site.name());
+            Map<String, String> form = new LinkedHashMap<>();
+            form.put("username", site.username());
+            form.put("password", site.password());
+            HttpResponse response = http.postForm(site.loginUrl(), form);
+            if (!response.isSuccess()) {
+                throw new FetchException("Login failed for " + site.name() + ": HTTP " + response.status());
+            }
+            if (http.cookies().size() == 0) {
+                throw new FetchException("Login returned no session cookie for " + site.name());
+            }
+            http.markAuthenticated();
+            log.info("Login successful for '{}' (session cookies: {})", site.name(), http.cookies().size());
+            return true;
         }
-        if (!site.requiresLogin()) return false;
-        log.info("Authenticating with site '{}'", site.name());
-        Map<String, String> form = new LinkedHashMap<>();
-        form.put("username", site.username());
-        form.put("password", site.password());
-        HttpResponse response = http.postForm(site.loginUrl(), form);
-        if (!response.isSuccess()) {
-            throw new FetchException("Login failed for " + site.name() + ": HTTP " + response.status());
-        }
-        if (http.cookies().size() == 0) {
-            throw new FetchException("Login returned no session cookie for " + site.name());
-        }
-        log.info("Login successful for '{}' (session cookies: {})", site.name(), http.cookies().size());
-        return true;
     }
 
     /** Cookie header that can be handed to Selenium / HtmlUnit for the same session. */

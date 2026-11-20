@@ -21,9 +21,11 @@ Every output row is a `ScrapedRecord` with:
 
 ## Output formats
 
-- CSV — flat map, one row per record (`CsvWriter`).
+- CSV — flat map, one row per record. Values starting with `=`, `+`, `-` or `@` are prefixed
+  with `'` to prevent spreadsheet formula injection (`CsvWriter`).
 - JSON — `{ generatedBy, count, records: [...] }` envelope (`JsonWriter`).
-- XLSX — one sheet, auto-sized columns (`ExcelWriter`).
+- XLSX — one sheet, auto-sized columns; cell values are capped at 32,767 characters to respect
+  Apache POI's limit (`ExcelWriter`).
 - SQL — `scraped_records` table, batched insert in one transaction (`RecordRepository`).
 
 ## Source-specific recipe options

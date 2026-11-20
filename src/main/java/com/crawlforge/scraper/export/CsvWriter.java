@@ -18,6 +18,11 @@ public final class CsvWriter implements DataWriter {
 
     @Override public String extension() { return "csv"; }
 
+    /** Prevent spreadsheet formula injection from scraped values. */
+    private static String safe(String value) {
+        return value.matches("^[=+\\-@].*") ? "'" + value : value;
+    }
+
     @Override
     public void write(List<ScrapedRecord> records, String target) {
         Set<String> headers = new LinkedHashSet<>();
@@ -29,7 +34,7 @@ public final class CsvWriter implements DataWriter {
             for (ScrapedRecord record : records) {
                 var map = record.toMap();
                 printer.printRecord(java.util.Arrays.stream(headerArray)
-                        .map(h -> map.getOrDefault(h, "")).toList());
+                        .map(h -> safe(map.getOrDefault(h, ""))).toList());
             }
             printer.flush();
             Path path = Path.of(target);

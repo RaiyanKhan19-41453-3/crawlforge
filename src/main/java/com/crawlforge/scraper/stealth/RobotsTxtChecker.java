@@ -45,8 +45,9 @@ public final class RobotsTxtChecker {
                     .followRedirects(Redirect.NORMAL)
                     .connectTimeout(Duration.ofSeconds(3)).build();
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-            if (response.statusCode() == 401 || response.statusCode() == 403) return DISALLOW_ALL;
-            if (response.statusCode() >= 400) return Set.of();
+            if (response.statusCode() == 401 || response.statusCode() == 403
+                    || response.statusCode() >= 500) return DISALLOW_ALL;
+            if (response.statusCode() >= 400) return Set.of(); // 404 means no rules
 
             Set<String> rules = new HashSet<>();
             boolean inAgentBlock = false;
@@ -73,7 +74,8 @@ public final class RobotsTxtChecker {
             }
             return Set.copyOf(rules);
         } catch (Exception e) {
-            return Set.of(); // No robots.txt available means crawling is allowed.
+            // RFC 9309: if robots.txt is unreachable, treat the site as fully disallowed.
+            return DISALLOW_ALL;
         }
     }
 
