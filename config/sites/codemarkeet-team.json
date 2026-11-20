@@ -1,0 +1,17 @@
+{
+  "name": "codemarkeet-team",
+  "sourceType": "HTML",
+  "baseUrl": "https://codemarkeet.com",
+  "seedUrls": ["https://codemarkeet.com/team"],
+  "itemSelector": "div.reveal.group.text-center",
+  "fields": {
+    "name": "h3",
+    "role": "p.font-medium"
+  },
+  "xpathFields": {
+    "photo": ".//img/@src"
+  },
+  "maxPages": 1,
+  "maxDepth": 1,
+  "followLinks": false
+}
