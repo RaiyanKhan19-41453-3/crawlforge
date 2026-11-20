@@ -11,7 +11,6 @@ import com.crawlforge.scraper.crawler.CrawlerFactory;
 import com.crawlforge.scraper.http.ResilientHttpClient;
 import com.crawlforge.scraper.parsers.ParserRegistry;
 import com.crawlforge.scraper.testsupport.LocalServer;
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import org.junit.jupiter.api.Test;

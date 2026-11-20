@@ -9,3 +9,5 @@ README.md
 REQUIREMENTS_MATRIX.md
 docs/
 .github/
+
+.mvn-cache/

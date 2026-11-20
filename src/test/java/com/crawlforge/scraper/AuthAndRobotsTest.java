@@ -3,7 +3,6 @@ package com.crawlforge.scraper;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.crawlforge.scraper.core.config.ScraperConfig;
 import com.crawlforge.scraper.core.config.SiteConfig;
@@ -23,7 +22,7 @@ import java.nio.file.Path;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
 
-class Round6FeaturesTest {
+class AuthAndRobotsTest {
 
     @Test
     void deniedRobotsTxtDisallowsEverything() throws Exception {

@@ -13,13 +13,12 @@ import com.crawlforge.scraper.orchestration.EngineResult;
 import com.crawlforge.scraper.orchestration.ScrapeEngine;
 import com.crawlforge.scraper.parsers.ParserRegistry;
 import com.crawlforge.scraper.testsupport.LocalServer;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
 
-class Round5FeaturesTest {
+class TransportFeaturesTest {
 
     @Test
     void charsetFromContentTypeIsHonoured() {

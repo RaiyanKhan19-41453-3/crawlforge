@@ -6,7 +6,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.crawlforge.scraper.core.config.ScraperConfig;
 import com.crawlforge.scraper.core.config.SiteConfig;
 import com.crawlforge.scraper.core.model.ScrapeJob;
-import com.crawlforge.scraper.core.model.ScrapedRecord;
 import com.crawlforge.scraper.core.model.SourceType;
 import com.crawlforge.scraper.crawler.CrawlerFactory;
 import com.crawlforge.scraper.export.CsvWriter;
@@ -25,7 +24,7 @@ import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import org.junit.jupiter.api.Test;
 
-class Round10FeaturesTest {
+class RunReportingTest {
 
     @Test
     void metricsArePerRunNotCumulative() throws Exception {

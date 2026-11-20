@@ -2,7 +2,7 @@ package com.crawlforge.scraper.util;
 
 import java.util.regex.Pattern;
 
-/** Reusable regular expressions used by {@link RegexUtils}, normalisers and validators. */
+/** Reusable regular expressions used by {@link RegexUtils}, normalizers and validators. */
 public final class RegexPatterns {
 
     private RegexPatterns() {}

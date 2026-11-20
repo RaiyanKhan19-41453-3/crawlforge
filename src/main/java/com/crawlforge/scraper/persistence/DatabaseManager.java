@@ -40,7 +40,7 @@ public final class DatabaseManager {
                     statement.execute(sql);
                 }
             }
-            log.info("Database schema initialised from {}", sqlFile);
+            log.info("Database schema initialized from {}", sqlFile);
         } catch (IOException | SQLException e) {
             throw new StorageException("Could not initialise schema from " + sqlFile, e);
         }

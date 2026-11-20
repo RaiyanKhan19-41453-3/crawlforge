@@ -4,7 +4,7 @@ import org.apache.commons.csv.CSVFormat
 import org.apache.commons.csv.CSVParser
 import org.apache.commons.csv.CSVPrinter
 
-/** Groovy automation script: normalises whitespace in a client-supplied CSV feed. */
+/** Groovy automation script: normalizes whitespace in a client-supplied CSV feed. */
 class CsvCleanupTool {
 
     static String clean(String input) {

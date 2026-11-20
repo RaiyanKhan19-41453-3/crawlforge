@@ -1,7 +1,6 @@
 package com.crawlforge.scraper.core.config;
 
 import java.time.Duration;
-import java.util.Objects;
 
 /** Backoff strategy for transient fetch failures. Immutable and thread-safe. */
 public final class RetryPolicy {

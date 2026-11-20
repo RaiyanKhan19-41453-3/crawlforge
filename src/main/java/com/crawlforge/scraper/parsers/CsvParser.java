@@ -58,7 +58,7 @@ public final class CsvParser implements Parser {
                                 attributes.put(name, DataNormalizer.normalize(row.get(index)));
                             }
                         } catch (NumberFormatException ignored) {
-                            // Non-numeric selectors are only valid for headed CSV files.
+                            // Non-numeric selectors only apply to CSV files with a header row.
                         }
                     });
                 }

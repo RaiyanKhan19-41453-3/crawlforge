@@ -40,7 +40,7 @@ public final class CrawlForgeApplication implements Runnable {
     private String output;
 
     @Option(names = {"--engine"}, description = "auto, selenium, htmlunit or playwright (browser binaries required)", defaultValue = "auto")
-    private String engine = "auto";
+    private String engine;
 
     @Option(names = {"--demo"}, description = "Run against the built-in offline demo website")
     private boolean demo;

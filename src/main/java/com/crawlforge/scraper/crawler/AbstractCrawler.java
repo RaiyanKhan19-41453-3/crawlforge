@@ -55,10 +55,9 @@ public abstract class AbstractCrawler implements Crawler {
                         job.recordPage(false);
                         continue;
                     }
-                    // Parsers work from a page body and may not know the exact URL. Restore it
-                    // here so every exported row has auditable provenance.
-                    // Restore provenance first: a record with a blank URL is invalid, so
-                    // filtering before this step would silently discard perfectly good rows.
+                    // Parsers may not know the exact URL. Restore it and rescore before the
+                    // quality gate: a blank URL is invalid, so filtering first would silently
+                    // discard perfectly good rows.
                     List<ScrapedRecord> records = parserRegistry.parse(raw, site).stream()
                             .map(record -> {
                                 ScrapedRecord fixed = record.url() == null || record.url().isBlank()

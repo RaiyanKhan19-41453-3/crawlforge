@@ -16,7 +16,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import org.junit.jupiter.api.Test;
 
-class Round8FeaturesTest {
+class CrawlLifecycleTest {
 
     @Test
     void recordsWithoutOwnUrlInheritPageUrl() throws Exception {

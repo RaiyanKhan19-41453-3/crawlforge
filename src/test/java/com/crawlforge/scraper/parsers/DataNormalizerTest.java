@@ -17,7 +17,7 @@ class DataNormalizerTest {
     }
 
     @Test
-    void normalisesThousandSeparatedNumbers() {
+    void normalizesThousandSeparatedNumbers() {
         assertEquals("1250.00", DataNormalizer.numeric("1,250.00"));
     }
 }

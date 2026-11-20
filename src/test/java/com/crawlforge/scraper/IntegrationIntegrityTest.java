@@ -20,7 +20,7 @@ import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import org.junit.jupiter.api.Test;
 
-class Round9FeaturesTest {
+class IntegrationIntegrityTest {
 
     @Test
     void detectsModernMastercardRange() {

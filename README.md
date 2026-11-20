@@ -143,4 +143,4 @@ scripts/           Docker-only build/run wrappers for Linux and Windows
   without them. Use `HtmlUnitCrawler` (no browser needed), or enable `-Pplaywright-runtime`
   and install Chromium when building a browser-enabled image.
 - The built-in demo server exists so the full pipeline can be verified without a live site.
-- Core behaviour is covered by 118 automated tests; run `./scripts/build.sh` to verify.
+- Core behavior is covered by 118 automated tests; run `./scripts/build.sh` to verify.

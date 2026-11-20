@@ -2,7 +2,6 @@ package com.crawlforge.scraper;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.crawlforge.scraper.core.config.ScraperConfig;
 import com.crawlforge.scraper.core.config.SiteConfig;
@@ -27,7 +26,7 @@ import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import org.junit.jupiter.api.Test;
 
-class Round13FeaturesTest {
+class MerchantValidationTest {
 
     @Test
     void nonNumericTimestampIsRejected() throws Exception {
@@ -37,7 +36,7 @@ class Round13FeaturesTest {
     }
 
     @Test
-    void outOfRangeTimestampIsTypedNotRaw() throws Exception {
+    void nonIntegralTimestampIsRejectedWithTypedError() throws Exception {
         String payload = "{\"transactions\":[{\"id\":\"tx\",\"amount\":10,"
                 + "\"created_at\":1e30,\"status\":\"ok\"}]}";
         assertEquals("PAYLOAD_ERROR", parseError(payload).errorCode());

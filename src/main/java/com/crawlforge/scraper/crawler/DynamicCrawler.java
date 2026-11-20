@@ -19,13 +19,10 @@ import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /** Selenium crawler for JavaScript-rendered pages, with login, waits and failure screenshots. */
 public final class DynamicCrawler extends AbstractCrawler {
 
-    private static final Logger LOG = LoggerFactory.getLogger(DynamicCrawler.class);
     private final ScraperConfig config;
     private final BrowserFingerprint fingerprint;
     private WebDriver driver;
@@ -80,7 +77,7 @@ public final class DynamicCrawler extends AbstractCrawler {
         username.sendKeys(site.username());
         password.sendKeys(site.password());
         submit.click();
-        LOG.info("Selenium login submitted for site '{}'", site.name());
+        log.info("Selenium login submitted for site '{}'", site.name());
     }
 
     @Override
@@ -91,9 +88,9 @@ public final class DynamicCrawler extends AbstractCrawler {
             Files.createDirectories(dir);
             Path target = dir.resolve("failure-" + Instant.now().toEpochMilli() + ".png");
             Files.write(target, shooter.getScreenshotAs(OutputType.BYTES));
-            LOG.warn("Saved failure screenshot for {} to {}", url, target);
+            log.warn("Saved failure screenshot for {} to {}", url, target);
         } catch (Exception e) {
-            LOG.debug("Could not save screenshot for {}: {}", url, e.getMessage());
+            log.debug("Could not save screenshot for {}: {}", url, e.getMessage());
         }
     }
 

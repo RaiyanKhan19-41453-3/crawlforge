@@ -64,7 +64,7 @@ AI output is never accepted unchecked:
 4. Are secrets, cookies, tokens and card numbers kept out of logs and source?
 5. Does the change stay inside its documented layer?
 6. Are external calls bounded by timeouts, retries and a rate limiter?
-7. Does the documentation reflect the actual behaviour?
+7. Does the documentation reflect the actual behavior?
 
 ## Evidence in the repository
 

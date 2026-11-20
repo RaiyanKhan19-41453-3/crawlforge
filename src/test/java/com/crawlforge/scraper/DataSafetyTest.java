@@ -26,7 +26,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
 
-class Round7FeaturesTest {
+class DataSafetyTest {
 
     @Test
     void relativeCredentialUrlNeverRegistersCredentials() throws Exception {

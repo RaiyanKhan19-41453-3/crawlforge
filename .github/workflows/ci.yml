@@ -10,7 +10,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # Same wrapper used locally - no Maven installed on the host.
+      # Same script used locally - no Maven installed on the host.
       - name: Build and run all tests in Docker
         run: |
           chmod +x scripts/*.sh

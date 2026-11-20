@@ -1,7 +1,6 @@
 package com.crawlforge.scraper;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.crawlforge.scraper.core.config.SiteConfig;
 import com.crawlforge.scraper.core.model.SourceType;
@@ -11,7 +10,7 @@ import com.crawlforge.scraper.parsers.HtmlParser;
 import com.crawlforge.scraper.parsers.XmlParser;
 import org.junit.jupiter.api.Test;
 
-class Round15FeaturesTest {
+class ParserFidelityTest {
 
     @Test
     void absoluteXpathsAreScopedToEachXmlItem() {
