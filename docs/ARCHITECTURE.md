@@ -25,7 +25,8 @@ writer. This separation is what makes the code maintainable and easy for a team 
 ## Patterns used (real OOP, not tokenism)
 
 - **Template method** — `AbstractCrawler.crawl()` defines the pipeline; subclasses only fetch.
-- **Strategy** — `Parser`, `Crawler`, `DataWriter`, `CaptchaSolver` are interchangeable.
+- **Strategy** — `Parser`, `Crawler`, `DataWriter` and `CaptchaSolver` are selected by a
+  registry/factory; each crawler declares the source types it supports via `supports()`.
 - **Factory / registry** — `CrawlerFactory`, `ParserRegistry`, `WriterFactory`.
 - **Builder** — `ScrapedRecord`, `ScrapeJob`, `SiteConfig`.
 - **Immutable value objects** — records and configs use defensive copies.

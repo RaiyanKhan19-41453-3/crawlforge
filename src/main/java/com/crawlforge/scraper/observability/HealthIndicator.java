@@ -16,7 +16,7 @@ public final class HealthIndicator {
     public static HealthReport check(Map<String, Long> snapshot) {
         long pages = snapshot.getOrDefault("pages", 0L);
         long failures = snapshot.getOrDefault("failures", 0L);
-        boolean healthy = pages == 0 || failures * 2 < pages;
+        boolean healthy = pages > 0 && failures * 2 < pages;
         return new HealthReport(healthy, healthy ? "OK" : "DEGRADED", snapshot);
     }
 }

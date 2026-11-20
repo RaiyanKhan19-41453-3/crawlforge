@@ -10,11 +10,14 @@ import com.crawlforge.scraper.demo.DemoServer;
 import com.crawlforge.scraper.http.ResilientHttpClient;
 import com.crawlforge.scraper.orchestration.EngineResult;
 import com.crawlforge.scraper.orchestration.ScrapeEngine;
+import com.crawlforge.scraper.orchestration.JobScheduler;
 import com.crawlforge.scraper.parsers.ParserRegistry;
 import com.crawlforge.scraper.persistence.DatabaseManager;
 import com.crawlforge.scraper.persistence.RecordRepository;
 import java.nio.file.Path;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
@@ -45,6 +48,9 @@ public final class CrawlForgeApplication implements Runnable {
     @Option(names = {"--persist"}, description = "Also write records to the configured SQL database")
     private boolean persist;
 
+    @Option(names = {"--interval"}, description = "Repeat the crawl every N seconds until interrupted (0 = once)")
+    private int intervalSeconds;
+
     @Override
     public void run() {
         ScraperConfig config = ScraperConfig.load(configPath);
@@ -54,15 +60,33 @@ public final class CrawlForgeApplication implements Runnable {
             CrawlerFactory factory = new CrawlerFactory(config, http, registry, engine);
             ScrapeEngine scrapeEngine = new ScrapeEngine(config, factory);
 
-            if (demo) {
-                runDemo(scrapeEngine, config);
-                return;
+            if (intervalSeconds > 0) {
+                try (JobScheduler scheduler = new JobScheduler()) {
+                    scheduler.schedule(() -> {
+                        try {
+                            executeOnce(scrapeEngine, config);
+                        } catch (Exception e) {
+                            throw new IllegalStateException("Scheduled crawl failed", e);
+                        }
+                    }, 0, intervalSeconds, TimeUnit.SECONDS);
+                    System.out.println("Scheduled every " + intervalSeconds + " seconds. Press Ctrl+C to stop.");
+                    new CountDownLatch(1).await();
+                }
+            } else {
+                executeOnce(scrapeEngine, config);
             }
-            runConfiguredSite(scrapeEngine, config);
         } catch (Exception e) {
             System.err.println("Crawl failed: " + e.getMessage());
             e.printStackTrace(System.err);
             throw new CommandLine.ExecutionException(new CommandLine(this), e.getMessage(), e);
+        }
+    }
+
+    private void executeOnce(ScrapeEngine engine, ScraperConfig config) throws Exception {
+        if (demo) {
+            runDemo(engine, config);
+        } else {
+            runConfiguredSite(engine, config);
         }
     }
 
@@ -129,8 +153,13 @@ public final class CrawlForgeApplication implements Runnable {
         System.out.println("Elapsed: " + result.elapsedMs() + " ms");
         System.out.println("Metrics: " + result.metrics());
         System.out.println("Output:  " + target);
-        System.out.println("Health:  " + com.crawlforge.scraper.observability.HealthIndicator
-                .check(result.metrics()).status());
+        com.crawlforge.scraper.observability.HealthReport health =
+                com.crawlforge.scraper.observability.HealthIndicator.check(result.metrics());
+        System.out.println("Health:  " + health.status());
+        if (!health.healthy()) {
+            throw new CommandLine.ExecutionException(new CommandLine(new CrawlForgeApplication()),
+                    "Crawl health is " + health.status() + " - check the metrics above");
+        }
     }
 
     public static void main(String[] args) {

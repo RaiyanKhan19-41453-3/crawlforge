@@ -11,7 +11,7 @@ public final class WriterFactory {
         String lower = target.toLowerCase(java.util.Locale.ROOT);
         if (lower.endsWith(".csv")) return new CsvWriter();
         if (lower.endsWith(".json")) return new JsonWriter();
-        if (lower.endsWith(".xlsx") || lower.endsWith(".xls")) return new ExcelWriter();
+        if (lower.endsWith(".xlsx")) return new ExcelWriter();
         throw new StorageException("Unsupported output format: " + target);
     }
 }

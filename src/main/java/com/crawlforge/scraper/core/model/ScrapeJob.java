@@ -105,8 +105,8 @@ public final class ScrapeJob {
             if (site == null) throw new IllegalArgumentException("site config is required");
             if (seedUrls.isEmpty()) seedUrls.addAll(site.seedUrls());
             if (seedUrls.isEmpty()) throw new IllegalArgumentException("at least one seed URL is required");
-            if (maxPages <= 0) maxPages = site.maxPages();
-            if (maxDepth <= 0) maxDepth = site.maxDepth();
+            if (maxPages < 0) maxPages = site.maxPages();
+            if (maxDepth < 0) maxDepth = site.maxDepth();
             return new ScrapeJob(this);
         }
     }

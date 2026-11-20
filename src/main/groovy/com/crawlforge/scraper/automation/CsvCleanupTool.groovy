@@ -8,6 +8,7 @@ import org.apache.commons.csv.CSVPrinter
 class CsvCleanupTool {
 
     static String clean(String input) {
+        if (input == null || input.trim().isEmpty()) return ''
         def readerFormat = CSVFormat.DEFAULT.builder()
                 .setHeader()
                 .setSkipHeaderRecord(true)
@@ -19,7 +20,8 @@ class CsvCleanupTool {
             def printer = new CSVPrinter(writer, CSVFormat.DEFAULT.builder().setHeader(headers as String[]).build())
             parser.each { row ->
                 // Use positional access so duplicate header names never lose a column.
-                printer.printRecord((0..<headers.size()).collect { i ->
+                int count = Math.max(headers.size(), row.size())
+                printer.printRecord((0..<count).collect { i ->
                     row.size() > i ? row.get(i).trim().replaceAll(/\s+/, ' ') : ''
                 })
             }

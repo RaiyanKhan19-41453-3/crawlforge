@@ -43,8 +43,10 @@ public final class ScrapeEngine {
         int seedCount = Math.max(1, seeds.size());
         ExecutorService pool = WorkerPoolExecutor.newPool(Math.min(config.maxThreads(), seedCount));
         List<Future<List<ScrapedRecord>>> futures = new ArrayList<>();
-        // One shared budget across all seeds: maxPages is a total, not a per-seed allowance.
+        // One shared budget AND one shared frontier: maxPages is a total, and pages reachable
+        // from more than one seed must be visited only once.
         java.util.concurrent.atomic.AtomicInteger pageBudget = new java.util.concurrent.atomic.AtomicInteger(job.maxPages());
+        CrawlContext sharedContext = new CrawlContext(pageBudget);
 
         for (int i = 0; i < seeds.size(); i++) {
             final String seed = seeds.get(i);
@@ -58,12 +60,7 @@ public final class ScrapeEngine {
                     .build();
             futures.add(pool.submit(() -> {
                 Crawler crawler = crawlerFactory.create(job.site().sourceType(), job.site());
-                CrawlContext context = new CrawlContext(pageBudget);
-                List<ScrapedRecord> records = crawler.crawl(subJob, context);
-                job.aggregate(context.pages(), records.size(), context.failures());
-                runMetrics.addPages(context.pages());
-                runMetrics.addFailures(context.failures());
-                return records;
+                return crawler.crawl(subJob, sharedContext);
             }));
         }
 
@@ -81,6 +78,9 @@ public final class ScrapeEngine {
             }
         }
         WorkerPoolExecutor.shutdown(pool, 30);
+        job.aggregate(sharedContext.pages(), all.size(), sharedContext.failures());
+        runMetrics.addPages(sharedContext.pages());
+        runMetrics.addFailures(sharedContext.failures());
 
         try {
             if (outputTarget != null && !outputTarget.isBlank()) {

@@ -1,6 +1,7 @@
 package com.crawlforge.scraper.export;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.crawlforge.scraper.core.model.ScrapedRecord;
@@ -70,5 +71,7 @@ class WriterTest {
         assertTrue(WriterFactory.forTarget("a.csv") instanceof CsvWriter);
         assertTrue(WriterFactory.forTarget("a.json") instanceof JsonWriter);
         assertTrue(WriterFactory.forTarget("a.xlsx") instanceof ExcelWriter);
+        assertThrows(com.crawlforge.scraper.core.exception.StorageException.class,
+                () -> WriterFactory.forTarget("a.xls"));
     }
 }
