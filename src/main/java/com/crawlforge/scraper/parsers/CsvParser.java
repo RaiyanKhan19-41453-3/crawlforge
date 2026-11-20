@@ -21,6 +21,7 @@ public final class CsvParser implements Parser {
 
     @Override
     public List<ScrapedRecord> parse(String raw, SiteConfig site) {
+        raw = DataNormalizer.stripBom(raw);
         CSVFormat.Builder formatBuilder = CSVFormat.DEFAULT.builder().setIgnoreEmptyLines(true);
         if (site.csvHasHeader()) {
             formatBuilder.setHeader().setSkipHeaderRecord(true);

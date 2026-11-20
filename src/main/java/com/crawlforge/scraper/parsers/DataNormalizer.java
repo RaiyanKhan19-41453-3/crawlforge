@@ -10,6 +10,12 @@ public final class DataNormalizer {
 
     private DataNormalizer() {}
 
+    /** Removes a UTF-8 BOM that Excel/Windows tools prepend to text feeds. */
+    public static String stripBom(String value) {
+        if (value == null) return "";
+        return !value.isEmpty() && value.charAt(0) == '\uFEFF' ? value.substring(1) : value;
+    }
+
     public static String normalize(String value) {
         if (value == null) return "";
         String cleaned = Normalizer.normalize(value, Normalizer.Form.NFKC);

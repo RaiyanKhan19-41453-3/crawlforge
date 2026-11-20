@@ -36,9 +36,18 @@ public final class PaginationHandler {
     public boolean allowed(String url, SiteConfig site) {
         if (site.baseUrl() == null) return true;
         try {
-            String target = URI.create(url).getHost();
-            String base = URI.create(site.baseUrl()).getHost();
-            return target != null && target.equalsIgnoreCase(base);
+            URI target = URI.create(url);
+            URI base = URI.create(site.baseUrl());
+            if (target.getHost() == null || base.getHost() == null) return false;
+            if (!target.getHost().equalsIgnoreCase(base.getHost())) return false;
+            String targetScheme = target.getScheme() == null ? "" : target.getScheme().toLowerCase(java.util.Locale.ROOT);
+            String baseScheme = base.getScheme() == null ? "" : base.getScheme().toLowerCase(java.util.Locale.ROOT);
+            // Same scheme, or a safe http -> https upgrade on the same host.
+            boolean schemeOk = targetScheme.equals(baseScheme)
+                    || (baseScheme.equals("http") && targetScheme.equals("https"));
+            if (!schemeOk) return false;
+            // Different explicit ports on the same host are a different service.
+            return target.getPort() <= 0 || base.getPort() <= 0 || target.getPort() == base.getPort();
         } catch (IllegalArgumentException e) {
             return false;
         }

@@ -31,8 +31,7 @@ public final class XmlParser implements Parser {
             factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
             // Namespace prefixes are stripped so recipes can use simple XPath names such as
             // //item even when the client feed uses <x:item>.
-            String normalized = raw.replaceAll("\\s+xmlns(?::[\\w.-]+)?\\s*=\\s*(['\"])[^'\"]*\\1", "")
-                    .replaceAll("<(/?)(\\w+):", "<$1");
+            String normalized = stripPrefixesOutsideCdata(DataNormalizer.stripBom(raw));
             Document doc = factory.newDocumentBuilder().parse(new InputSource(new StringReader(normalized)));
             String itemExpression = site.itemSelector() == null ? "//item" : site.itemSelector();
             NodeList items = (NodeList) XPathFactory.newInstance().newXPath()
@@ -69,5 +68,26 @@ public final class XmlParser implements Parser {
         } catch (Exception e) {
             throw new ParseException("Could not parse XML for site " + site.name(), e);
         }
+    }
+
+    /** Removes namespace prefixes from tags only, leaving CDATA text untouched. */
+    private static String stripPrefixesOutsideCdata(String xml) {
+        java.util.regex.Pattern cdata = java.util.regex.Pattern.compile(
+                "<!\\[CDATA\\[.*?\\]\\]>", java.util.regex.Pattern.DOTALL);
+        java.util.regex.Matcher matcher = cdata.matcher(xml);
+        StringBuilder result = new StringBuilder();
+        int last = 0;
+        while (matcher.find()) {
+            result.append(stripPrefixes(xml.substring(last, matcher.start())));
+            result.append(matcher.group());
+            last = matcher.end();
+        }
+        result.append(stripPrefixes(xml.substring(last)));
+        return result.toString();
+    }
+
+    private static String stripPrefixes(String fragment) {
+        return fragment.replaceAll("\\s+xmlns(?::[\\w.-]+)?\\s*=\\s*(['\"])[^'\"]*\\1", "")
+                .replaceAll("<(/?)(\\w+):", "<$1");
     }
 }

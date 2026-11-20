@@ -1,7 +1,9 @@
 package com.crawlforge.scraper.parsers;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.crawlforge.scraper.core.config.SiteConfig;
 import com.crawlforge.scraper.core.exception.ParseException;
 import com.crawlforge.scraper.core.model.ScrapedRecord;
@@ -16,7 +18,10 @@ import java.util.Map;
 /** Parses JSON APIs and embedded JSON payloads using simple dotted paths with array indices. */
 public final class JsonParser implements Parser {
 
-    private final ObjectMapper mapper = new ObjectMapper();
+    // Preserve the declared precision of numeric fields such as prices.
+    private final ObjectMapper mapper = new ObjectMapper()
+            .enable(DeserializationFeature.USE_BIG_DECIMAL_FOR_FLOATS)
+            .setNodeFactory(JsonNodeFactory.withExactBigDecimals(true));
 
     @Override
     public boolean supports(SourceType type) { return type == SourceType.JSON; }
@@ -24,7 +29,7 @@ public final class JsonParser implements Parser {
     @Override
     public List<ScrapedRecord> parse(String raw, SiteConfig site) {
         try {
-            JsonNode root = mapper.readTree(raw);
+            JsonNode root = mapper.readTree(DataNormalizer.stripBom(raw));
             if (root == null || root.isMissingNode()) return List.of();
             JsonNode collection = resolvePath(root, site.jsonResultPath());
             List<JsonNode> nodes = new ArrayList<>();
@@ -81,6 +86,14 @@ public final class JsonParser implements Parser {
 
     private static String text(JsonNode node) {
         if (node == null || node.isMissingNode() || node.isNull()) return "";
-        return node.isValueNode() ? node.asText() : node.toString();
+        if (!node.isValueNode()) return node.toString();
+        if (node.isNumber()) {
+            try {
+                return node.decimalValue().toPlainString();
+            } catch (NumberFormatException ignored) {
+                return node.asText();
+            }
+        }
+        return node.asText();
     }
 }
